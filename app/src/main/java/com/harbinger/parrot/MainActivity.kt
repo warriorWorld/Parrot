@@ -3,6 +3,7 @@ package com.harbinger.parrot
 import android.Manifest
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -22,6 +23,8 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR //设置状态栏黑色字体
+        this.window.statusBarColor = resources.getColor(R.color.white)
         setContentView(R.layout.activity_main)
         initRecorder()
         initUI()
