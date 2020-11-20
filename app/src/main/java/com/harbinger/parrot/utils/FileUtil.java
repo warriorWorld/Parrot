@@ -20,9 +20,13 @@ public class FileUtil {
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
+    public static String getRecordDirectory() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Parrot" + File.separator;
+    }
+
     public static String getWritablePcmPath(Context context) {
 //        String pcmDirectory = context.getExternalFilesDir(null).getAbsolutePath() + File.separator + "pcm" + File.separator;
-        String pcmDirectoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Parrot" + File.separator;
+        String pcmDirectoryPath = getRecordDirectory();
         String pcmName = System.currentTimeMillis() + ".pcm";
         File pcmDirectory = new File(pcmDirectoryPath);
         if (!pcmDirectory.exists()) {
@@ -154,6 +158,28 @@ public class FileUtil {
                 deleteFile(f);
             }
             file.delete();
+        }
+    }
+
+    public static void clearDirectory(File dir) {
+        Log.d(TAG, "clear dir:" + dir);
+        if (dir.isFile()) {
+            Log.d(TAG, "clear dir is file");
+            dir.delete();
+            return;
+        }
+        File[] files = dir.listFiles();
+        if (null == files || files.length == 0) {
+            Log.d(TAG, "dir is empty");
+            return;
+        }
+        for (File file : files) {
+            if (file.isFile()) {
+                Log.d(TAG, "delete " + file.getName());
+                file.delete();
+            } else {
+                clearDirectory(file);
+            }
         }
     }
 }

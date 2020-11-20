@@ -1,6 +1,7 @@
 package com.harbinger.parrot.vad
 
 import android.content.Context
+import android.util.Log
 import com.harbinger.parrot.utils.CommonUtil
 import com.harbinger.parrot.utils.FileUtil
 import com.konovalov.vad.VadConfig
@@ -13,6 +14,7 @@ import java.io.IOException
  * Created by acorn on 2020/11/20.
  */
 class VadRecorder(context: Context) : IVADRecorder {
+    private val TAG="VadRecorder"
     private var listener: VADListener? = null
     private var isSpeaking = false
     private var voiceRecorder: VoiceRecorder? = null
@@ -26,6 +28,7 @@ class VadRecorder(context: Context) : IVADRecorder {
 
                 override fun onSpeechDetected(buffer: ShortArray?) {
                     if (!isSpeaking) {
+                        Log.d(TAG,"on bos")
                         isSpeaking = true
                         listener?.onBos()
                         try {
@@ -38,6 +41,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                     if (fos != null) {
                         val bytes = CommonUtil.shortToBytes(buffer)
                         try {
+                            Log.d(TAG,"write to pcm")
                             fos!!.write(bytes)
                         } catch (e: IOException) {
                             e.printStackTrace()
@@ -50,6 +54,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                         isSpeaking = false
                         val pcmPath = recordPath
                         pcmPath?.let {
+                            Log.d(TAG,"on eos")
                             val wavPath = pcmPath.replace(".pcm", ".wav")
                             FileUtil.savePcmToWav(File(pcmPath), File(wavPath))
                             FileUtil.deleteFile(File(pcmPath))

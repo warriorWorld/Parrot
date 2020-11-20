@@ -14,12 +14,14 @@ import androidx.appcompat.app.AppCompatActivity
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
+import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.vad.IVADRecorder
 import com.harbinger.parrot.vad.VADListener
 import com.harbinger.parrot.vad.VadRecorder
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
+import java.io.File
 
 class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private val TAG = "VAD"
@@ -40,6 +42,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         initAnimator()
         initAudioPlayer()
         initRecorder()
+        clearAllRecord()
+    }
+
+    private fun clearAllRecord() {
+        FileUtil.clearDirectory(File(FileUtil.getRecordDirectory()))
     }
 
     private fun initUI() {
@@ -77,13 +84,14 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         audioPlayer = AudioPlayer(this)
         audioPlayer?.setPlayListener(object : PlayListener {
             override fun onBegin() {
-                recordAnimator?.pause()
                 playAnim(playAnimator)
+                statusTv.text="playing..."
             }
 
             override fun onComplete() {
-                startRecord()
                 stopAllAnim()
+                statusTv.text="idle"
+                startRecord()
             }
         })
     }
