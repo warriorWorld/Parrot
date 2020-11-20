@@ -14,7 +14,7 @@ import java.io.IOException
  * Created by acorn on 2020/11/20.
  */
 class VadRecorder(context: Context) : IVADRecorder {
-    private val TAG="VadRecorder"
+    private val TAG = "VadRecorder"
     private var listener: VADListener? = null
     private var isSpeaking = false
     private var voiceRecorder: VoiceRecorder? = null
@@ -26,24 +26,15 @@ class VadRecorder(context: Context) : IVADRecorder {
             context,
             object : VoiceRecorder.Listener {
 
-                override fun onSpeechDetected(buffer: ShortArray?) {
+                override fun onSpeechDetected() {
                     if (!isSpeaking) {
-                        Log.d(TAG,"on bos")
+                        Log.d(TAG, "on bos")
                         isSpeaking = true
                         listener?.onBos()
                         try {
                             recordPath = FileUtil.getWritablePcmPath(context)
                             fos = FileOutputStream(recordPath, true)
                         } catch (e: FileNotFoundException) {
-                            e.printStackTrace()
-                        }
-                    }
-                    if (fos != null) {
-                        val bytes = CommonUtil.shortToBytes(buffer)
-                        try {
-                            Log.d(TAG,"write to pcm")
-                            fos!!.write(bytes)
-                        } catch (e: IOException) {
                             e.printStackTrace()
                         }
                     }
@@ -54,7 +45,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                         isSpeaking = false
                         val pcmPath = recordPath
                         pcmPath?.let {
-                            Log.d(TAG,"on eos")
+                            Log.d(TAG, "on eos")
                             val wavPath = pcmPath.replace(".pcm", ".wav")
                             FileUtil.savePcmToWav(File(pcmPath), File(wavPath))
                             FileUtil.deleteFile(File(pcmPath))
@@ -63,11 +54,23 @@ class VadRecorder(context: Context) : IVADRecorder {
                         closeFos()
                     }
                 }
+
+                override fun onBuffer(buffer: ShortArray?) {
+                    if (fos != null && isSpeaking) {
+                        val bytes = CommonUtil.shortToBytes(buffer)
+                        try {
+                            Log.d(TAG, "write to pcm from noise")
+                            fos!!.write(bytes)
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
             }, VadConfig.newBuilder()
                 .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
                 .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
-                .setSilenceDurationMillis(600)
+                .setSilenceDurationMillis(800)
                 .setVoiceDurationMillis(10)
                 .build()
         )
@@ -85,7 +88,7 @@ class VadRecorder(context: Context) : IVADRecorder {
         if (null != fos) {
             try {
                 fos!!.close()
-                fos=null
+                fos = null
             } catch (e: IOException) {
                 e.printStackTrace()
             }

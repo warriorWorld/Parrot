@@ -116,6 +116,8 @@ public class VoiceRecorder {
             while (!Thread.interrupted() && isListening && audioRecord != null) {
                 short[] buffer = new short[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels() * 2];
                 audioRecord.read(buffer, 0, buffer.length);
+                Log.d(TAG, "buffer...");
+                callback.onBuffer(buffer);
                 isSpeechDetected(buffer);
             }
         }
@@ -124,7 +126,7 @@ public class VoiceRecorder {
             vad.isContinuousSpeech(buffer, new VadListener() {
                 @Override
                 public void onSpeechDetected() {
-                    callback.onSpeechDetected(buffer);
+                    callback.onSpeechDetected();
                 }
 
                 @Override
@@ -136,8 +138,10 @@ public class VoiceRecorder {
     }
 
     public interface Listener {
-        void onSpeechDetected(short[] buffer);
+        void onSpeechDetected();
 
         void onNoiseDetected();
+
+        void onBuffer(short[] buffer);
     }
 }
