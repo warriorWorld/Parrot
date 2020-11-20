@@ -189,10 +189,14 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     private fun startRecord() {
         vadRecorder?.start()
+        currentStatus = UIStatus.IDLE
+        refreshUI()
     }
 
     private fun stopRecord() {
         vadRecorder?.stop()
+        currentStatus = UIStatus.IDLE
+        refreshUI()
     }
 
     override fun onRequestPermissionsResult(
