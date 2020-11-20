@@ -39,8 +39,9 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
     private var isRotaReverse = false
-    private var recordAnimator: ObjectAnimator? = null
+    private var parrotAnimator: ValueAnimator? = null
     private var currentStatus = UIStatus.IDLE
+    private var curAngle = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,17 +80,20 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun initAnimator() {
-        recordAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", 0f, 360f)
-        recordAnimator?.addListener(object : AnimatorListenerAdapter() {
-            override fun onAnimationStart(animation: Animator?, isReverse: Boolean) {
-                super.onAnimationStart(animation, isReverse)
-                isRotaReverse = isReverse
+        parrotAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 5000
+            repeatMode = ObjectAnimator.RESTART
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                parrotIv.rotation = curAngle
+                if (isRotaReverse)
+                    curAngle--
+                else {
+                    curAngle++
+                }
             }
-        })
-        recordAnimator?.interpolator = LinearInterpolator()
-        recordAnimator?.repeatMode = ValueAnimator.RESTART
-        recordAnimator?.repeatCount = ObjectAnimator.INFINITE
-        recordAnimator?.duration = 3000
+        }
     }
 
     private fun initAudioPlayer() {
@@ -148,35 +152,35 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             when (currentStatus) {
                 UIStatus.IDLE -> {
                     statusTv.text = "idle"
-                    parrotIv.setImageResource(R.drawable.ic_parrot1)
+//                    parrotIv.setImageResource(R.drawable.ic_parrot1)
+                    stopAnim()
                 }
                 UIStatus.RECORDING -> {
                     statusTv.text = "bos"
-                    parrotIv.setImageResource(R.drawable.ic_parrot2)
+//                    parrotIv.setImageResource(R.drawable.ic_parrot2)
+                    startAnim(false)
                 }
                 UIStatus.PLAYING -> {
                     statusTv.text = "playing..."
-                    parrotIv.setImageResource(R.drawable.ic_parrot3)
+//                    parrotIv.setImageResource(R.drawable.ic_parrot3)
+                    startAnim(true)
                 }
             }
         }
     }
 
-    private fun startAnim() {
-        if (recordAnimator?.isStarted!!) {
-            recordAnimator?.cancel()
-            if (isRotaReverse) {
-                recordAnimator?.start()
-            } else {
-                recordAnimator?.reverse()
-            }
+    private fun startAnim(isReverse: Boolean) {
+        if (parrotAnimator?.isStarted!!) {
+            parrotAnimator?.cancel()
+            isRotaReverse = isReverse
+            parrotAnimator?.start()
         } else {
-            recordAnimator?.start()
+            parrotAnimator?.start()
         }
     }
 
     private fun stopAnim() {
-        recordAnimator?.pause()
+        parrotAnimator?.pause()
     }
 
     private fun startRecord() {
