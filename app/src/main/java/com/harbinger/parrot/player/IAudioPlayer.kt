@@ -5,6 +5,6 @@ package com.harbinger.parrot.player
  */
 interface IAudioPlayer {
     fun setPlayListener(playListener: PlayListener)
-    fun play()
+    fun play(path: String)
     fun stop()
 }
