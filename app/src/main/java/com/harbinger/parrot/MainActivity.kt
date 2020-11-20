@@ -2,6 +2,7 @@ package com.harbinger.parrot
 
 import android.Manifest
 import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.os.Bundle
@@ -24,6 +25,12 @@ import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
 import java.io.File
 
+enum class UIStatus {
+    IDLE,
+    RECORDING,
+    PLAYING
+}
+
 class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private val TAG = "VAD"
     private lateinit var statusTv: TextView
@@ -31,8 +38,9 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var vadRecorder: IVADRecorder? = null
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
-    private var playAnimator: ObjectAnimator? = null
+    private var isRotaReverse = false
     private var recordAnimator: ObjectAnimator? = null
+    private var currentStatus = UIStatus.IDLE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,30 +79,31 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun initAnimator() {
-        playAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", 360f)
-        playAnimator?.interpolator = LinearInterpolator()
-        playAnimator?.repeatMode = ValueAnimator.REVERSE
-        playAnimator?.repeatCount = ObjectAnimator.INFINITE
-        playAnimator?.duration = 2000
-        recordAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", -360f)
+        recordAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", 0f, 360f)
+        recordAnimator?.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationStart(animation: Animator?, isReverse: Boolean) {
+                super.onAnimationStart(animation, isReverse)
+                isRotaReverse = isReverse
+            }
+        })
         recordAnimator?.interpolator = LinearInterpolator()
         recordAnimator?.repeatMode = ValueAnimator.RESTART
         recordAnimator?.repeatCount = ObjectAnimator.INFINITE
-        recordAnimator?.duration = 2000
+        recordAnimator?.duration = 3000
     }
 
     private fun initAudioPlayer() {
         audioPlayer = AudioPlayer(this)
         audioPlayer?.setPlayListener(object : PlayListener {
             override fun onBegin() {
-                playAnim(playAnimator)
-                statusTv.text = "playing..."
+                currentStatus = UIStatus.PLAYING
+                refreshUI()
             }
 
             override fun onComplete() {
-                stopAllAnim()
-                statusTv.text = "idle"
                 startRecord()
+                currentStatus = UIStatus.IDLE
+                refreshUI()
             }
         })
     }
@@ -113,19 +122,15 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             vadRecorder?.setVadListener(object : VADListener {
                 override fun onBos() {
                     Log.d(TAG, "bos")
-                    runOnUiThread {
-                        statusTv.text = "bos"
-                        playAnim(recordAnimator)
-                    }
+                    currentStatus = UIStatus.RECORDING
+                    refreshUI()
                 }
 
                 override fun onEos(recordPath: String) {
                     Log.d(TAG, "eos")
-                    stopRecord()
                     runOnUiThread {
-                        stopAllAnim()
+                        stopRecord()
                         audioPlayer?.play(recordPath)
-                        statusTv.text = "eos"
                     }
                 }
             })
@@ -138,14 +143,39 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         }
     }
 
-    private fun playAnim(anim: ObjectAnimator?) {
-        playAnimator?.pause()
-        recordAnimator?.pause()
-        anim?.start()
+    private fun refreshUI() {
+        runOnUiThread {
+            when (currentStatus) {
+                UIStatus.IDLE -> {
+                    statusTv.text = "idle"
+                    parrotIv.setImageResource(R.drawable.ic_parrot1)
+                }
+                UIStatus.RECORDING -> {
+                    statusTv.text = "bos"
+                    parrotIv.setImageResource(R.drawable.ic_parrot2)
+                }
+                UIStatus.PLAYING -> {
+                    statusTv.text = "playing..."
+                    parrotIv.setImageResource(R.drawable.ic_parrot3)
+                }
+            }
+        }
     }
 
-    private fun stopAllAnim() {
-        playAnimator?.pause()
+    private fun startAnim() {
+        if (recordAnimator?.isStarted!!) {
+            recordAnimator?.cancel()
+            if (isRotaReverse) {
+                recordAnimator?.start()
+            } else {
+                recordAnimator?.reverse()
+            }
+        } else {
+            recordAnimator?.start()
+        }
+    }
+
+    private fun stopAnim() {
         recordAnimator?.pause()
     }
 
