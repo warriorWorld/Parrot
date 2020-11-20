@@ -1,13 +1,20 @@
 package com.harbinger.parrot.vad;
 
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
+import com.harbinger.parrot.utils.FileUtil;
 import com.konovalov.vad.Vad;
 import com.konovalov.vad.VadConfig;
 import com.konovalov.vad.VadListener;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
 import static android.media.AudioFormat.CHANNEL_IN_STEREO;
@@ -19,17 +26,19 @@ import static android.media.AudioFormat.CHANNEL_IN_STEREO;
 public class VoiceRecorder {
     private static final int PCM_CHANNEL = CHANNEL_IN_MONO;
     private static final int PCM_ENCODING_BIT = AudioFormat.ENCODING_PCM_16BIT;
-
+    private Context context;
     private Vad vad;
     private AudioRecord audioRecord;
     private Listener callback;
     private Thread thread;
 
     private boolean isListening = false;
-
+    private FileOutputStream fos;
+    private String recordPath;
     private static final String TAG = "VoiceRecorder";
 
-    public VoiceRecorder(Listener callback, VadConfig config) {
+    public VoiceRecorder(Context context, Listener callback, VadConfig config) {
+        this.context = context;
         this.callback = callback;
         this.vad = new Vad(config);
     }
@@ -71,6 +80,13 @@ public class VoiceRecorder {
         if (vad != null) {
             vad.stop();
         }
+        if (null != fos) {
+            try {
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -111,12 +127,26 @@ public class VoiceRecorder {
         @Override
         public void run() {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-
+            try {
+                recordPath = FileUtil.getWritablePcmPath(context);
+                fos = new FileOutputStream(recordPath, true);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
             while (!Thread.interrupted() && isListening && audioRecord != null) {
                 short[] buffer = new short[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels() * 2];
                 audioRecord.read(buffer, 0, buffer.length);
 
                 isSpeechDetected(buffer);
+                if (fos != null) {
+                    byte[] bytes = new byte[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels()];
+                    audioRecord.read(bytes, 0, bytes.length);
+                    try {
+                        fos.write(bytes);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
@@ -133,6 +163,10 @@ public class VoiceRecorder {
                 }
             });
         }
+    }
+
+    public String getRecordPath() {
+        return recordPath;
     }
 
     public interface Listener {

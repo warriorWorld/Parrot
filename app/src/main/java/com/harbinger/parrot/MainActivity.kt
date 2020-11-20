@@ -8,8 +8,12 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.harbinger.parrot.vad.IVADRecorder
+import com.harbinger.parrot.vad.VADListener
+import com.harbinger.parrot.vad.VadRecorder
 import com.harbinger.parrot.vad.VoiceRecorder
 import com.konovalov.vad.VadConfig
+import com.konovalov.vad.VadListener
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
@@ -18,7 +22,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private val TAG = "VAD"
     private lateinit var statusTv: TextView
     private lateinit var parrotIv: ImageView
-    private lateinit var recorder: VoiceRecorder
+    private var vadRecorder: IVADRecorder? = null
     private var isRecording = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,31 +50,26 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     @AfterPermissionGranted(0)
     private fun initRecorder() {
-        val perms = arrayOf(Manifest.permission.RECORD_AUDIO)
+        val perms = arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
         if (EasyPermissions.hasPermissions(this, *perms)) {
             // Already have permission, do the thing
             // ...
-            recorder = VoiceRecorder(
-                object : VoiceRecorder.Listener {
-                    override fun onSpeechDetected() {
-                        Log.d(TAG, "detected voice")
-                        runOnUiThread { statusTv.text = "detected voice" }
-                    }
+            vadRecorder = VadRecorder(this.applicationContext)
+            vadRecorder?.setVadListener(object : VADListener {
+                override fun onBos() {
+                    Log.d(TAG, "bos")
+                    runOnUiThread { statusTv.text = "bos" }
+                }
 
-                    override fun onNoiseDetected() {
-                        Log.d(TAG, "detected noise")
-                        runOnUiThread {
-                            statusTv.text = "detected noise"
-                        }
-                    }
-                }, VadConfig.newBuilder()
-                    .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_16K)
-                    .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_160)
-                    .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
-                    .setSilenceDurationMillis(500)
-                    .setVoiceDurationMillis(500)
-                    .build()
-            )
+                override fun onEos(recordPath: String) {
+                    Log.d(TAG, "eos")
+                    runOnUiThread { statusTv.text = "eos" }
+                }
+            })
         } else {
             // Do not have permissions, request them now
             EasyPermissions.requestPermissions(
@@ -82,11 +81,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
 
     private fun startRecord() {
-        recorder.start()
+        vadRecorder?.start()
     }
 
     private fun stopRecord() {
-        recorder.stop()
+        vadRecorder?.stop()
     }
 
     override fun onRequestPermissionsResult(
