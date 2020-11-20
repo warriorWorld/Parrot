@@ -1,13 +1,12 @@
 package com.harbinger.parrot
 
 import android.Manifest
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
@@ -154,16 +153,21 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     statusTv.text = "idle"
 //                    parrotIv.setImageResource(R.drawable.ic_parrot1)
                     stopAnim()
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 UIStatus.RECORDING -> {
                     statusTv.text = "bos"
 //                    parrotIv.setImageResource(R.drawable.ic_parrot2)
                     startAnim(false)
+                    //不锁屏
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 UIStatus.PLAYING -> {
                     statusTv.text = "playing..."
 //                    parrotIv.setImageResource(R.drawable.ic_parrot3)
                     startAnim(true)
+                    //不锁屏
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
             }
         }
