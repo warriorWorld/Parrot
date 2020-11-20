@@ -46,6 +46,12 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 true
             }
         }
+        parrotIv.setOnLongClickListener(object:View.OnLongClickListener{
+            override fun onLongClick(p0: View?): Boolean {
+
+                return false;
+            }
+        })
     }
 
     @AfterPermissionGranted(0)

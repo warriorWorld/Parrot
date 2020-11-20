@@ -6,15 +6,9 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import com.harbinger.parrot.utils.FileUtil;
 import com.konovalov.vad.Vad;
 import com.konovalov.vad.VadConfig;
 import com.konovalov.vad.VadListener;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
 import static android.media.AudioFormat.CHANNEL_IN_STEREO;
@@ -33,8 +27,6 @@ public class VoiceRecorder {
     private Thread thread;
 
     private boolean isListening = false;
-    private FileOutputStream fos;
-    private String recordPath;
     private static final String TAG = "VoiceRecorder";
 
     public VoiceRecorder(Context context, Listener callback, VadConfig config) {
@@ -80,13 +72,6 @@ public class VoiceRecorder {
         if (vad != null) {
             vad.stop();
         }
-        if (null != fos) {
-            try {
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 
@@ -127,26 +112,11 @@ public class VoiceRecorder {
         @Override
         public void run() {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
-            try {
-                recordPath = FileUtil.getWritablePcmPath(context);
-                fos = new FileOutputStream(recordPath, true);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+
             while (!Thread.interrupted() && isListening && audioRecord != null) {
                 short[] buffer = new short[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels() * 2];
                 audioRecord.read(buffer, 0, buffer.length);
-
                 isSpeechDetected(buffer);
-                if (fos != null) {
-                    byte[] bytes = new byte[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels()];
-                    audioRecord.read(bytes, 0, bytes.length);
-                    try {
-                        fos.write(bytes);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
 
@@ -154,7 +124,7 @@ public class VoiceRecorder {
             vad.isContinuousSpeech(buffer, new VadListener() {
                 @Override
                 public void onSpeechDetected() {
-                    callback.onSpeechDetected();
+                    callback.onSpeechDetected(buffer);
                 }
 
                 @Override
@@ -165,12 +135,8 @@ public class VoiceRecorder {
         }
     }
 
-    public String getRecordPath() {
-        return recordPath;
-    }
-
     public interface Listener {
-        void onSpeechDetected();
+        void onSpeechDetected(short[] buffer);
 
         void onNoiseDetected();
     }
