@@ -1,19 +1,16 @@
 package com.harbinger.parrot.player
 
-import android.media.MediaPlayer
+import android.content.Context
 
 /**
  * Created by acorn on 2020/11/20.
  */
-class AudioPlayer() : IAudioPlayer {
-    private var mediaPlayer: MediaPlayer? = null
+class AudioPlayer(context: Context) : IAudioPlayer {
+    private var player: OncePlayer? = null
     private var playListener: PlayListener? = null
 
     init {
-        mediaPlayer = MediaPlayer()
-        mediaPlayer?.setOnCompletionListener {
-            playListener?.onComplete()
-        }
+        player = OncePlayer.create(context)
     }
 
     override fun setPlayListener(playListener: PlayListener) {
@@ -21,16 +18,13 @@ class AudioPlayer() : IAudioPlayer {
     }
 
     override fun play(path: String) {
-        if (mediaPlayer?.isPlaying!!) {
-            mediaPlayer?.stop()
-        }
-        mediaPlayer?.setDataSource(path)
-        mediaPlayer?.prepare()
-        mediaPlayer?.start()
+        player?.play(
+            path
+        ) { playListener?.onComplete() }
         playListener?.onBegin()
     }
 
     override fun stop() {
-        mediaPlayer?.stop()
+        player?.stop()
     }
 }

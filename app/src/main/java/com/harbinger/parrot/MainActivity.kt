@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun initAudioPlayer() {
-        audioPlayer = AudioPlayer()
+        audioPlayer = AudioPlayer(this)
         audioPlayer?.setPlayListener(object : PlayListener {
             override fun onBegin() {
             }
@@ -85,14 +85,18 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             vadRecorder?.setVadListener(object : VADListener {
                 override fun onBos() {
                     Log.d(TAG, "bos")
-                    runOnUiThread { statusTv.text = "bos" }
+                    runOnUiThread {
+                        statusTv.text = "bos"
+                    }
                 }
 
                 override fun onEos(recordPath: String) {
                     Log.d(TAG, "eos")
-                    audioPlayer?.play(recordPath)
                     stopRecord()
-                    runOnUiThread { statusTv.text = "eos" }
+                    runOnUiThread {
+                        audioPlayer?.play(recordPath)
+                        statusTv.text = "eos"
+                    }
                 }
             })
         } else {
