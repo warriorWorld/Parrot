@@ -17,6 +17,7 @@ class VadRecorder(context: Context) : IVADRecorder {
     private val TAG = "VadRecorder"
     private var listener: VADListener? = null
     private var isSpeaking = false
+    private var isContinousSpeaking = false
     private var voiceRecorder: VoiceRecorder? = null
     private var fos: FileOutputStream? = null
     private var recordPath: String? = null
@@ -25,12 +26,9 @@ class VadRecorder(context: Context) : IVADRecorder {
         voiceRecorder = VoiceRecorder(
             context,
             object : VoiceRecorder.Listener {
-
                 override fun onSpeechDetected() {
                     if (!isSpeaking) {
-                        Log.d(TAG, "on bos")
                         isSpeaking = true
-                        listener?.onBos()
                         try {
                             recordPath = FileUtil.getWritablePcmPath(context)
                             fos = FileOutputStream(recordPath, true)
@@ -40,9 +38,18 @@ class VadRecorder(context: Context) : IVADRecorder {
                     }
                 }
 
-                override fun onNoiseDetected() {
-                    if (isSpeaking) {
+                override fun onContinuousSpeechDetected() {
+                    if (!isContinousSpeaking) {
+                        isContinousSpeaking = true
+                        Log.d(TAG, "on bos")
+                        listener?.onBos()
+                    }
+                }
+
+                override fun onContinuousNoiseDetected() {
+                    if (isContinousSpeaking) {
                         isSpeaking = false
+                        isContinousSpeaking = false
                         val pcmPath = recordPath
                         pcmPath?.let {
                             Log.d(TAG, "on eos")
@@ -52,6 +59,16 @@ class VadRecorder(context: Context) : IVADRecorder {
                             listener?.onEos(wavPath)
                         }
                         closeFos()
+                    } else {
+                        if (isSpeaking) {
+                            Log.d(TAG, "dump speaking")
+                            isSpeaking = false
+                            val pcmPath = recordPath
+                            pcmPath?.let {
+                                FileUtil.deleteFile(File(pcmPath))
+                            }
+                            closeFos()
+                        }
                     }
                 }
 
@@ -59,7 +76,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                     if (fos != null && isSpeaking) {
                         val bytes = CommonUtil.shortToBytes(buffer)
                         try {
-                            Log.d(TAG, "write to pcm from noise")
+                            Log.d(TAG, "write to pcm")
                             fos!!.write(bytes)
                         } catch (e: IOException) {
                             e.printStackTrace()
@@ -71,7 +88,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                 .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
                 .setSilenceDurationMillis(800)
-                .setVoiceDurationMillis(10)
+                .setVoiceDurationMillis(800)
                 .build()
         )
     }
