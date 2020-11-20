@@ -65,10 +65,10 @@ class VadRecorder(context: Context) : IVADRecorder {
                 }
             }, VadConfig.newBuilder()
                 .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
-                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_480)
+                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
-                .setSilenceDurationMillis(500)
-                .setVoiceDurationMillis(100)
+                .setSilenceDurationMillis(600)
+                .setVoiceDurationMillis(10)
                 .build()
         )
     }
