@@ -7,6 +7,7 @@ import android.animation.ValueAnimator
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -71,10 +72,12 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     private fun initAnimator() {
         playAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", 360f)
-        playAnimator?.repeatMode = ValueAnimator.RESTART
+        playAnimator?.interpolator = LinearInterpolator()
+        playAnimator?.repeatMode = ValueAnimator.REVERSE
         playAnimator?.repeatCount = ObjectAnimator.INFINITE
         playAnimator?.duration = 2000
         recordAnimator = ObjectAnimator.ofFloat(parrotIv, "rotation", -360f)
+        recordAnimator?.interpolator = LinearInterpolator()
         recordAnimator?.repeatMode = ValueAnimator.RESTART
         recordAnimator?.repeatCount = ObjectAnimator.INFINITE
         recordAnimator?.duration = 2000
@@ -85,12 +88,12 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         audioPlayer?.setPlayListener(object : PlayListener {
             override fun onBegin() {
                 playAnim(playAnimator)
-                statusTv.text="playing..."
+                statusTv.text = "playing..."
             }
 
             override fun onComplete() {
                 stopAllAnim()
-                statusTv.text="idle"
+                statusTv.text = "idle"
                 startRecord()
             }
         })

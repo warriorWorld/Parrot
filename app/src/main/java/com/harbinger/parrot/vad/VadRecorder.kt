@@ -64,11 +64,11 @@ class VadRecorder(context: Context) : IVADRecorder {
                     }
                 }
             }, VadConfig.newBuilder()
-                .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_16K)
-                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_160)
+                .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
+                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_480)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
                 .setSilenceDurationMillis(500)
-                .setVoiceDurationMillis(500)
+                .setVoiceDurationMillis(100)
                 .build()
         )
     }
@@ -85,6 +85,7 @@ class VadRecorder(context: Context) : IVADRecorder {
         if (null != fos) {
             try {
                 fos!!.close()
+                fos=null
             } catch (e: IOException) {
                 e.printStackTrace()
             }
