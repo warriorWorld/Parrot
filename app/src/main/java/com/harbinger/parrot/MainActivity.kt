@@ -151,7 +151,20 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         if (EasyPermissions.hasPermissions(this, *perms)) {
             // Already have permission, do the thing
             // ...
-            vadRecorder = VadRecorder(this.applicationContext, FileUtil.getTempRecordDirectory())
+            vadRecorder = VadRecorder(
+                this.applicationContext,
+                FileUtil.getTempRecordDirectory(),
+                SharedPreferencesUtils.getIntSharedPreferencesData(
+                    this,
+                    ShareKeys.PARROT_SILENCE_DURATION
+                    , 800
+                ),
+                SharedPreferencesUtils.getIntSharedPreferencesData(
+                    this,
+                    ShareKeys.PARROT_SPEECH_DURATION
+                    , 800
+                )
+            )
             vadRecorder?.setVadListener(object : VADListener {
                 override fun onBos() {
                     Log.d(TAG, "bos")

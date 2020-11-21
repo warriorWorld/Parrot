@@ -15,7 +15,12 @@ import java.io.IOException
 /**
  * Created by acorn on 2020/11/20.
  */
-class VadRecorder(context: Context, directoryPath: String) : IVADRecorder {
+class VadRecorder(
+    context: Context,
+    directoryPath: String,
+    silenceDuration: Int,
+    speechDuration: Int
+) : IVADRecorder {
     private val TAG = "VadRecorder"
     private var listener: VADListener? = null
     private var isSpeaking = false
@@ -89,20 +94,8 @@ class VadRecorder(context: Context, directoryPath: String) : IVADRecorder {
                 .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
                 .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
-                .setSilenceDurationMillis(
-                    SharedPreferencesUtils.getIntSharedPreferencesData(
-                        context,
-                        ShareKeys.PARROT_SILENCE_DURATION
-                        , 800
-                    )
-                )
-                .setVoiceDurationMillis(
-                    SharedPreferencesUtils.getIntSharedPreferencesData(
-                        context,
-                        ShareKeys.PARROT_SPEECH_DURATION
-                        , 800
-                    )
-                )
+                .setSilenceDurationMillis(silenceDuration)
+                .setVoiceDurationMillis(speechDuration)
                 .build()
         )
     }

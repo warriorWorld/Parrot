@@ -30,7 +30,12 @@ public class FileUtil {
     }
 
     public static String getReservedRecordDirectory() {
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Bat" + File.separator;
+        String pcmDirectoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Bat" + File.separator;
+        File pcmDirectory = new File(pcmDirectoryPath);
+        if (!pcmDirectory.exists()) {
+            pcmDirectory.mkdirs();
+        }
+        return pcmDirectoryPath;
     }
 
     public static String getWritablePcmName(Context context) {

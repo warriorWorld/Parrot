@@ -16,7 +16,9 @@ import androidx.core.app.NotificationCompat;
 
 import com.harbinger.parrot.MainActivity;
 import com.harbinger.parrot.R;
+import com.harbinger.parrot.config.ShareKeys;
 import com.harbinger.parrot.utils.FileUtil;
+import com.harbinger.parrot.utils.SharedPreferencesUtils;
 import com.harbinger.parrot.vad.IVADRecorder;
 import com.harbinger.parrot.vad.VadRecorder;
 
@@ -71,7 +73,15 @@ public class RecordService extends Service {
     }
 
     private void initRecorder() {
-        recorder = new VadRecorder(this, FileUtil.getReservedRecordDirectory());
+        recorder = new VadRecorder(this, FileUtil.getReservedRecordDirectory(), SharedPreferencesUtils.getIntSharedPreferencesData(
+                this,
+                ShareKeys.RECORD_SILENCE_DURATION
+                , 800
+        ), SharedPreferencesUtils.getIntSharedPreferencesData(
+                this,
+                ShareKeys.RECORD_SPEECH_DURATION
+                , 800
+        ));
     }
 
     @Override
