@@ -30,12 +30,14 @@ class FileModel : IFileModel {
                 result.add(directory)
                 continue
             }
-            val book = FileBean(
-                file.absolutePath, file.name,
-                R.drawable.ic_flounder, 0, FileType.FILE
-            )
-            result.add(book)
-            continue
+            if (file.absolutePath.endsWith(".wav")) {
+                val record = FileBean(
+                    file.absolutePath, file.name,
+                    R.drawable.ic_flounder, 0, FileType.FILE
+                )
+                result.add(record)
+                continue
+            }
         }
         result.sortBy { it.name }
         return result

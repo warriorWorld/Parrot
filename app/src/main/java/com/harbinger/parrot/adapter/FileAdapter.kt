@@ -1,5 +1,6 @@
 package com.harbinger.parrot.adapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,8 +17,9 @@ import java.util.*
 /**
  * Created by acorn on 2020/11/21.
  */
-class FileAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var list: ArrayList<FileBean>? = null
+    private var currentPlaying = -1
     private var onRecycleItemClickListener: OnRecycleItemClickListener? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -36,7 +38,16 @@ class FileAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = list!![position]
-        (holder as NormalViewHolder).titleTv.text = item.name
+
+        (holder as NormalViewHolder).titleTv.text = StringUtil.getDateToString(
+            item.name.replace(".wav", "").toLong(),
+            "yyyy-MM-dd HH:mm:ss"
+        )
+        if (currentPlaying == position) {
+            (holder as NormalViewHolder).titleTv.setTextColor(context.resources.getColor(R.color.colorPrimary))
+        } else {
+            (holder as NormalViewHolder).titleTv.setTextColor(context.resources.getColor(R.color.main_text_color))
+        }
         if (item.modifiedDate == 0L) {
             (holder as NormalViewHolder).dateTv.visibility = View.GONE
         } else {
@@ -57,6 +68,10 @@ class FileAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun getList(): ArrayList<FileBean>? {
         return list
+    }
+
+    fun setCurrentPlaying(position: Int) {
+        currentPlaying = position
     }
 
     fun setOnItemClickListener(listener: OnRecycleItemClickListener) {
