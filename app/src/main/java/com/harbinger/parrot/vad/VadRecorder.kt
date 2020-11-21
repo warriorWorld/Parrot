@@ -2,8 +2,10 @@ package com.harbinger.parrot.vad
 
 import android.content.Context
 import android.util.Log
+import com.harbinger.parrot.config.ShareKeys
 import com.harbinger.parrot.utils.CommonUtil
 import com.harbinger.parrot.utils.FileUtil
+import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.konovalov.vad.VadConfig
 import java.io.File
 import java.io.FileNotFoundException
@@ -87,8 +89,20 @@ class VadRecorder(context: Context) : IVADRecorder {
                 .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
                 .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
-                .setSilenceDurationMillis(800)
-                .setVoiceDurationMillis(800)
+                .setSilenceDurationMillis(
+                    SharedPreferencesUtils.getIntSharedPreferencesData(
+                        context,
+                        ShareKeys.PARROT_SILENCE_DURATION
+                        , 800
+                    )
+                )
+                .setVoiceDurationMillis(
+                    SharedPreferencesUtils.getIntSharedPreferencesData(
+                        context,
+                        ShareKeys.PARROT_SPEECH_DURATION
+                        , 800
+                    )
+                )
                 .build()
         )
     }

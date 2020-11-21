@@ -3,7 +3,9 @@ package com.harbinger.parrot
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -12,10 +14,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.harbinger.parrot.config.ShareKeys
+import com.harbinger.parrot.dialog.EditDialog
+import com.harbinger.parrot.dialog.EditDialogBuilder
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.utils.FileUtil
+import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.harbinger.parrot.vad.IVADRecorder
 import com.harbinger.parrot.vad.VADListener
 import com.harbinger.parrot.vad.VadRecorder
@@ -44,8 +50,10 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR //设置状态栏黑色字体
-        this.window.statusBarColor = resources.getColor(R.color.white)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR //设置状态栏黑色字体
+            this.window.statusBarColor = resources.getColor(R.color.white)
+        }
         setContentView(R.layout.activity_main)
         initUI()
         initAnimator()
@@ -72,7 +80,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         }
         parrotIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
-
+                showParrotSettingsDialog()
                 return false;
             }
         })
@@ -197,6 +205,53 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         vadRecorder?.stop()
         currentStatus = UIStatus.IDLE
         refreshUI()
+    }
+
+    private fun showParrotSettingsDialog() {
+        val currentSilenceDuration = SharedPreferencesUtils.getIntSharedPreferencesData(
+            this,
+            ShareKeys.PARROT_SILENCE_DURATION
+            , 800
+        )
+        val currentSpeechDurantion = SharedPreferencesUtils.getIntSharedPreferencesData(
+            this,
+            ShareKeys.PARROT_SPEECH_DURATION
+            , 800
+        )
+        EditDialogBuilder(this)
+            .setTitle("设置沉默、语音识别间隔时长(重启后生效)")
+            .setHint("请输入沉默、语音间隔，以,分隔,单位毫秒.")
+            .setInputText("$currentSilenceDuration,$currentSpeechDurantion")
+            .setOkText("确定")
+            .setTitleSize(16)
+            .setCancelText("取消")
+            .setTitleLeft(true)
+            .setTitleBold(true)
+            .setEditDialogListener(object : EditDialog.OnEditDialogClickListener {
+                override fun onOkClick(result: String?) {
+                    val inputs = result?.split(",")
+                    if (inputs == null || inputs.size != 2) {
+                        Toast.makeText(this@MainActivity, "输入的参数不合法", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                    val silenceDuration = inputs[0]
+                    val speechDuration = inputs[1]
+                    SharedPreferencesUtils.setSharedPreferencesData(
+                        this@MainActivity,
+                        ShareKeys.PARROT_SILENCE_DURATION,
+                        Integer.valueOf(silenceDuration)
+                    )
+                    SharedPreferencesUtils.setSharedPreferencesData(
+                        this@MainActivity,
+                        ShareKeys.PARROT_SPEECH_DURATION,
+                        Integer.valueOf(speechDuration)
+                    )
+                }
+
+                override fun onCancelClick() {}
+            })
+            .create()
+            .show()
     }
 
     override fun onRequestPermissionsResult(
