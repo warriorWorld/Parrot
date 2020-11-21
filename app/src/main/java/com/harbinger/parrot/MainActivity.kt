@@ -219,7 +219,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             , 800
         )
         EditDialogBuilder(this)
-            .setTitle("设置沉默、语音识别间隔时长(重启后生效)")
+            .setTitle("设置鹦鹉沉默、语音识别间隔时长(重启后生效)")
             .setHint("请输入沉默、语音间隔，以,分隔,单位毫秒.")
             .setInputText("$currentSilenceDuration,$currentSpeechDurantion")
             .setOkText("确定")
