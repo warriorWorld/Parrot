@@ -3,6 +3,7 @@ package com.harbinger.parrot
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
@@ -20,6 +21,7 @@ import com.harbinger.parrot.dialog.EditDialogBuilder
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
+import com.harbinger.parrot.service.RecordService
 import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.harbinger.parrot.vad.IVADRecorder
@@ -40,6 +42,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private val TAG = "VAD"
     private lateinit var statusTv: TextView
     private lateinit var parrotIv: ImageView
+    private lateinit var batIv: ImageView
     private var vadRecorder: IVADRecorder? = null
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
@@ -69,6 +72,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private fun initUI() {
         statusTv = findViewById(R.id.status_tv)
         parrotIv = findViewById(R.id.parrot_iv)
+        batIv = findViewById(R.id.bat_iv)
         parrotIv.setOnClickListener {
             isRecording = if (isRecording) {
                 stopRecord()
@@ -81,6 +85,15 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         parrotIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
                 showParrotSettingsDialog()
+                return false;
+            }
+        })
+        batIv.setOnClickListener {
+            startService(Intent(this@MainActivity, RecordService::class.java))
+        }
+        batIv.setOnLongClickListener(object : View.OnLongClickListener {
+            override fun onLongClick(p0: View?): Boolean {
+                showBatSettingsDialog()
                 return false;
             }
         })
@@ -244,6 +257,53 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     SharedPreferencesUtils.setSharedPreferencesData(
                         this@MainActivity,
                         ShareKeys.PARROT_SPEECH_DURATION,
+                        Integer.valueOf(speechDuration)
+                    )
+                }
+
+                override fun onCancelClick() {}
+            })
+            .create()
+            .show()
+    }
+
+    private fun showBatSettingsDialog() {
+        val currentSilenceDuration = SharedPreferencesUtils.getIntSharedPreferencesData(
+            this,
+            ShareKeys.RECORD_SILENCE_DURATION
+            , 800
+        )
+        val currentSpeechDurantion = SharedPreferencesUtils.getIntSharedPreferencesData(
+            this,
+            ShareKeys.RECORD_SPEECH_DURATION
+            , 800
+        )
+        EditDialogBuilder(this)
+            .setTitle("设置蝙蝠沉默、语音识别间隔时长(重启后生效)")
+            .setHint("请输入沉默、语音间隔，以,分隔,单位毫秒.")
+            .setInputText("$currentSilenceDuration,$currentSpeechDurantion")
+            .setOkText("确定")
+            .setTitleSize(16)
+            .setCancelText("取消")
+            .setTitleLeft(true)
+            .setTitleBold(true)
+            .setEditDialogListener(object : EditDialog.OnEditDialogClickListener {
+                override fun onOkClick(result: String?) {
+                    val inputs = result?.split(",")
+                    if (inputs == null || inputs.size != 2) {
+                        Toast.makeText(this@MainActivity, "输入的参数不合法", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                    val silenceDuration = inputs[0]
+                    val speechDuration = inputs[1]
+                    SharedPreferencesUtils.setSharedPreferencesData(
+                        this@MainActivity,
+                        ShareKeys.RECORD_SILENCE_DURATION,
+                        Integer.valueOf(silenceDuration)
+                    )
+                    SharedPreferencesUtils.setSharedPreferencesData(
+                        this@MainActivity,
+                        ShareKeys.RECORD_SPEECH_DURATION,
                         Integer.valueOf(speechDuration)
                     )
                 }
