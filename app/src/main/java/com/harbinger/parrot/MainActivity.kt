@@ -6,7 +6,6 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -23,6 +22,7 @@ import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.service.RecordService
 import com.harbinger.parrot.utils.FileUtil
+import com.harbinger.parrot.utils.ServiceUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.harbinger.parrot.vad.IVADRecorder
 import com.harbinger.parrot.vad.VADListener
@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun clearAllRecord() {
-        FileUtil.clearDirectory(File(FileUtil.getRecordDirectory()))
+        FileUtil.clearDirectory(File(FileUtil.getTempRecordDirectory()))
     }
 
     private fun initUI() {
@@ -89,7 +89,16 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             }
         })
         batIv.setOnClickListener {
-            startService(Intent(this@MainActivity, RecordService::class.java))
+            val stopIntent = Intent(this, RecordService::class.java)
+            if (ServiceUtil.isServiceWork(
+                    this,
+                    RecordService.SERVICE_PCK_NAME
+                )
+            ) {
+                stopService(stopIntent)
+            } else {
+                startService(Intent(this@MainActivity, RecordService::class.java))
+            }
         }
         batIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
@@ -142,7 +151,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         if (EasyPermissions.hasPermissions(this, *perms)) {
             // Already have permission, do the thing
             // ...
-            vadRecorder = VadRecorder(this.applicationContext)
+            vadRecorder = VadRecorder(this.applicationContext, FileUtil.getTempRecordDirectory())
             vadRecorder?.setVadListener(object : VADListener {
                 override fun onBos() {
                     Log.d(TAG, "bos")

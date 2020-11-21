@@ -20,19 +20,21 @@ public class FileUtil {
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
-    public static String getRecordDirectory() {
-        return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Parrot" + File.separator;
-    }
-
-    public static String getWritablePcmPath(Context context) {
-//        String pcmDirectory = context.getExternalFilesDir(null).getAbsolutePath() + File.separator + "pcm" + File.separator;
-        String pcmDirectoryPath = getRecordDirectory();
-        String pcmName = System.currentTimeMillis() + ".pcm";
+    public static String getTempRecordDirectory() {
+        String pcmDirectoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Parrot" + File.separator;
         File pcmDirectory = new File(pcmDirectoryPath);
         if (!pcmDirectory.exists()) {
             pcmDirectory.mkdirs();
         }
-        return pcmDirectoryPath + pcmName;
+        return pcmDirectoryPath;
+    }
+
+    public static String getReservedRecordDirectory() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Bat" + File.separator;
+    }
+
+    public static String getWritablePcmName(Context context) {
+        return System.currentTimeMillis() + ".pcm";
     }
 
     // return size of inFilename

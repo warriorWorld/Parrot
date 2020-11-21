@@ -15,7 +15,7 @@ import java.io.IOException
 /**
  * Created by acorn on 2020/11/20.
  */
-class VadRecorder(context: Context) : IVADRecorder {
+class VadRecorder(context: Context, directoryPath: String) : IVADRecorder {
     private val TAG = "VadRecorder"
     private var listener: VADListener? = null
     private var isSpeaking = false
@@ -32,7 +32,7 @@ class VadRecorder(context: Context) : IVADRecorder {
                     if (!isSpeaking) {
                         isSpeaking = true
                         try {
-                            recordPath = FileUtil.getWritablePcmPath(context)
+                            recordPath = directoryPath + FileUtil.getWritablePcmName(context)
                             fos = FileOutputStream(recordPath, true)
                         } catch (e: FileNotFoundException) {
                             e.printStackTrace()

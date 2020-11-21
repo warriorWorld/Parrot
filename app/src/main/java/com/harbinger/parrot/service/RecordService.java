@@ -16,19 +16,25 @@ import androidx.core.app.NotificationCompat;
 
 import com.harbinger.parrot.MainActivity;
 import com.harbinger.parrot.R;
+import com.harbinger.parrot.utils.FileUtil;
+import com.harbinger.parrot.vad.IVADRecorder;
+import com.harbinger.parrot.vad.VadRecorder;
 
 
 public class RecordService extends Service {
+    public final static String SERVICE_PCK_NAME = "com.harbinger.parrot.service.RecordService";
     private final String TAG = "RecordService";
     private NotificationCompat.Builder notificationBuilder;
     private RemoteViews remoteViews;
     private NotificationManager notificationManager;
+    private IVADRecorder recorder;
 
     @Override
     public void onCreate() {
         super.onCreate();
         createNotification(this);
         startForeground(10, notificationBuilder.build());
+        initRecorder();
     }
 
     private void createNotification(Context context) {
@@ -64,9 +70,13 @@ public class RecordService extends Service {
         }
     }
 
+    private void initRecorder() {
+        recorder = new VadRecorder(this, FileUtil.getReservedRecordDirectory());
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        
+        recorder.start();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -79,5 +89,6 @@ public class RecordService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        recorder.stop();
     }
 }
