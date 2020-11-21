@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.harbinger.parrot.config.ShareKeys
 import com.harbinger.parrot.dialog.EditDialog
 import com.harbinger.parrot.dialog.EditDialogBuilder
+import com.harbinger.parrot.director.RecordListAcitivity
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
@@ -43,6 +44,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private lateinit var statusTv: TextView
     private lateinit var parrotIv: ImageView
     private lateinit var batIv: ImageView
+    private lateinit var flounderIv: ImageView
     private var vadRecorder: IVADRecorder? = null
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
@@ -73,6 +75,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         statusTv = findViewById(R.id.status_tv)
         parrotIv = findViewById(R.id.parrot_iv)
         batIv = findViewById(R.id.bat_iv)
+        flounderIv = findViewById(R.id.flounder_iv)
         parrotIv.setOnClickListener {
             isRecording = if (isRecording) {
                 stopRecord()
@@ -106,6 +109,9 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 return false;
             }
         })
+        flounderIv.setOnClickListener {
+            startActivity(Intent(this@MainActivity, RecordListAcitivity::class.java))
+        }
     }
 
     private fun initAnimator() {

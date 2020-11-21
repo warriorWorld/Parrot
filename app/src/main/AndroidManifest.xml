@@ -20,6 +20,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".director.RecordListAcitivity" />
+
         <service android:name=".service.RecordService" />
     </application>
 
