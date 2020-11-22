@@ -20,7 +20,10 @@ import com.harbinger.parrot.config.ShareKeys;
 import com.harbinger.parrot.utils.FileUtil;
 import com.harbinger.parrot.utils.SharedPreferencesUtils;
 import com.harbinger.parrot.vad.IVADRecorder;
+import com.harbinger.parrot.vad.VADListener;
 import com.harbinger.parrot.vad.VadRecorder;
+
+import org.jetbrains.annotations.NotNull;
 
 
 public class RecordService extends Service {
@@ -63,9 +66,13 @@ public class RecordService extends Service {
         }
     }
 
-    private void updateNotification() {
+    private void refreshUI(boolean isSpeaking) {
         try {
-            //TODO 转起来
+            if (isSpeaking) {
+                remoteViews.setImageViewResource(R.id.app_icon_iv, R.drawable.ic_listening);
+            } else {
+                remoteViews.setImageViewResource(R.id.app_icon_iv, R.drawable.ic_spy);
+            }
             notificationManager.notify(10, notificationBuilder.build());
         } catch (Exception e) {
             e.printStackTrace();
@@ -82,6 +89,17 @@ public class RecordService extends Service {
                 ShareKeys.RECORD_SPEECH_DURATION
                 , 800
         ));
+        recorder.setVadListener(new VADListener() {
+            @Override
+            public void onBos() {
+                refreshUI(true);
+            }
+
+            @Override
+            public void onEos(@NotNull String recordPath) {
+                refreshUI(false);
+            }
+        });
     }
 
     @Override

@@ -9,5 +9,5 @@
         android:layout_height="50dp"
         android:layout_centerInParent="true"
         android:layout_centerVertical="true"
-        android:src="@drawable/ic_parrot4" />
+        android:src="@drawable/ic_spy" />
 </RelativeLayout>

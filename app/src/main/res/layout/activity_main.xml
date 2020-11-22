@@ -31,19 +31,18 @@
         android:id="@+id/bat_iv"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
         android:layout_marginBottom="10dp"
         android:src="@drawable/ic_bat"
         app:layout_constraintBottom_toTopOf="@+id/parrot_iv"
-        app:layout_constraintRight_toRightOf="@+id/parrot_iv" />
+        app:layout_constraintLeft_toLeftOf="@+id/parrot_iv" />
 
     <ImageView
         android:id="@+id/flounder_iv"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
-        android:src="@drawable/ic_flounder"
-        app:layout_constraintLeft_toLeftOf="@+id/parrot_iv"
+        android:src="@drawable/ic_crab"
+        app:layout_constraintRight_toRightOf="@+id/parrot_iv"
         app:layout_constraintTop_toBottomOf="@+id/parrot_iv" />
 </androidx.constraintlayout.widget.ConstraintLayout>
