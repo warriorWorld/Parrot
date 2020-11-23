@@ -121,7 +121,6 @@ public class VoiceRecorder {
                     callback.onSpeechDetected();
                 }
                 isSpeechDetected(buffer);
-                Log.d(TAG, "buffer...");
                 callback.onBuffer(buffer);
             }
         }

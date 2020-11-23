@@ -98,8 +98,10 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     RecordService.SERVICE_PCK_NAME
                 )
             ) {
+                Toast.makeText(this@MainActivity,"stop service",Toast.LENGTH_SHORT).show()
                 stopService(stopIntent)
             } else {
+                Toast.makeText(this@MainActivity,"start service",Toast.LENGTH_SHORT).show()
                 startService(Intent(this@MainActivity, RecordService::class.java))
             }
         }
