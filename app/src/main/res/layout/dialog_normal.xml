@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dialog_ll"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rect_white_c5"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center_horizontal"
+        android:text="标题"
+        android:textColor="@color/main_text_color"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/dialog_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginRight="30dp"
+        android:gravity="center_horizontal"
+        android:text="内容"
+        android:textColor="@color/main_text_color"
+        android:textSize="13sp" />
+
+    <Button
+        android:id="@+id/ok_btn"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="30dp"
+        android:background="@drawable/btn_click_c5"
+        android:text="确定"
+        android:textColor="@color/white"
+        android:textSize="17sp" />
+
+    <Button
+        android:id="@+id/cancel_btn"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="13dp"
+        android:layout_marginRight="30dp"
+        android:background="@drawable/rect_gray_c5"
+        android:text="取消"
+        android:textColor="@color/colorPrimary"
+        android:textSize="17sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="30dp"></View>
+</LinearLayout>

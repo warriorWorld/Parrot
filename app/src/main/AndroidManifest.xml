@@ -23,6 +23,15 @@
         <activity android:name=".director.RecordListAcitivity" />
 
         <service android:name=".service.RecordService" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.harbinger.parrot.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

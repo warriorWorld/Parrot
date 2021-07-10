@@ -13,6 +13,8 @@ import com.harbinger.parrot.R
 import com.harbinger.parrot.UIStatus
 import com.harbinger.parrot.adapter.FileAdapter
 import com.harbinger.parrot.bean.FileBean
+import com.harbinger.parrot.dialog.NormalDialog
+import com.harbinger.parrot.dialog.NormalDialogBuilder
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
@@ -72,8 +74,21 @@ class RecordListAcitivity : AppCompatActivity() {
         fileRcv.setHasFixedSize(true)
         fileRcv.adapter = mAdapter
         deleteIv.setOnClickListener {
-            FileUtil.clearDirectory(File(FileUtil.getReservedRecordDirectory()))
-            doGetData()
+            NormalDialogBuilder(this)
+                .setTitle("是否删除全部录音？")
+                .setOkText("是")
+                .setCancelText("否")
+                .setOnDialogClickListener(object : NormalDialog.OnDialogClickListener {
+                    override fun onCancelClick() {
+                    }
+
+                    override fun onOkClick() {
+                        FileUtil.clearDirectory(File(FileUtil.getReservedRecordDirectory()))
+                        doGetData()
+                    }
+                })
+                .create()
+                .show()
         }
     }
 
