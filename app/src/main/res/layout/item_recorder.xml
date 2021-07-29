@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/item_rl"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="50dp"
     android:orientation="vertical"
     android:paddingTop="5dp"
     android:paddingBottom="5dp">
@@ -13,26 +13,39 @@
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:layout_marginLeft="10dp"
-        android:src="@drawable/ic_flounder"/>
+        android:layout_marginTop="5dp"
+        android:src="@drawable/ic_flounder" />
 
     <TextView
         android:id="@+id/title_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="10dp"
+        android:layout_marginTop="5dp"
         android:layout_toRightOf="@+id/item_icon"
         android:includeFontPadding="false"
         android:textColor="@color/main_text_color"
         android:textSize="17sp" />
 
     <TextView
+        android:id="@+id/size_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="10dp"
+        android:text="0MB"
+        android:textColor="@color/main_text_color_gray"
+        android:textSize="11sp" />
+
+    <TextView
         android:id="@+id/date_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/title_tv"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="2dp"
+        android:layout_alignParentBottom="true"
         android:layout_marginRight="10dp"
+        android:layout_marginBottom="5dp"
         android:text="2020-8-7"
         android:textColor="@color/main_text_color_gray"
         android:textSize="11sp" />

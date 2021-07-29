@@ -25,7 +25,7 @@ class FileModel : IFileModel {
             if (file.isDirectory && !file.name.startsWith(".")) {
                 val directory = FileBean(
                     file.absolutePath, file.name, R.drawable.ic_flounder,
-                    0, FileType.FOLDER
+                    file.lastModified(), file.length(), FileType.FOLDER
                 )
                 result.add(directory)
                 continue
@@ -33,7 +33,7 @@ class FileModel : IFileModel {
             if (file.absolutePath.endsWith(".wav")) {
                 val record = FileBean(
                     file.absolutePath, file.name,
-                    R.drawable.ic_flounder, 0, FileType.FILE
+                    R.drawable.ic_flounder, file.lastModified(), file.length(), FileType.FILE
                 )
                 result.add(record)
                 continue

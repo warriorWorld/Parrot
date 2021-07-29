@@ -15,17 +15,16 @@ public class FileBean implements Parcelable {
     public int iconId;
     public String name;
     public long modifiedDate;
+    public long fileSize;
     public FileType fileType;
 
-    public FileBean(String path, String name, int iconId, long modifiedDate) {
-        this(path, name, iconId, modifiedDate, null);
-    }
 
-    public FileBean(String path, String name, int iconId, long modifiedDate, FileType fileType) {
+    public FileBean(String path, String name, int iconId, long modifiedDate, long fileSize,FileType fileType) {
         this.path = path;
         this.name = name;
         this.iconId = iconId;
         this.modifiedDate = modifiedDate;
+        this.fileSize=fileSize;
         this.fileType = fileType;
     }
 
@@ -34,6 +33,7 @@ public class FileBean implements Parcelable {
         iconId = in.readInt();
         name = in.readString();
         modifiedDate = in.readLong();
+        fileSize = in.readLong();
     }
 
     @Override
@@ -42,6 +42,7 @@ public class FileBean implements Parcelable {
         dest.writeInt(iconId);
         dest.writeString(name);
         dest.writeLong(modifiedDate);
+        dest.writeLong(fileSize);
     }
 
     @Override

@@ -150,6 +150,18 @@ public class FileUtil {
         out.write(header, 0, 44);
     }
 
+    public static String getSize(long bytes) {
+        if (bytes < 1024) {
+            return bytes + "B";
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024) + "KB";
+        } else if (bytes < 1024 * 1024 * 1024) {
+            return (bytes / 1024 / 1024) + "MB";
+        } else {
+            return (bytes / 1024 / 1024 / 1024) + "GB";
+        }
+    }
+
     public static void deleteFile(File file) {
         if (file.isFile() && file.exists()) {
             file.delete();

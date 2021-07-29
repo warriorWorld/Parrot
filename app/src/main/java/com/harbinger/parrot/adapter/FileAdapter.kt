@@ -11,6 +11,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.harbinger.parrot.R
 import com.harbinger.parrot.bean.FileBean
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
+import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
+import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.utils.StringUtil
 import java.util.*
 
@@ -21,6 +23,7 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
     private var list: ArrayList<FileBean>? = null
     private var currentPlaying = -1
     private var onRecycleItemClickListener: OnRecycleItemClickListener? = null
+    private var onRecycleItemLongClickListener: OnRecycleItemLongClickListener? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val view: View = LayoutInflater.from(parent.getContext())
@@ -39,15 +42,13 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = list!![position]
 
-        (holder as NormalViewHolder).titleTv.text = StringUtil.getDateToString(
-            item.name.replace(".wav", "").toLong(),
-            "yyyy-MM-dd HH:mm:ss"
-        )
+        (holder as NormalViewHolder).titleTv.text = item.name
         if (currentPlaying == position) {
             (holder as NormalViewHolder).titleTv.setTextColor(context.resources.getColor(R.color.colorPrimary))
         } else {
             (holder as NormalViewHolder).titleTv.setTextColor(context.resources.getColor(R.color.main_text_color))
         }
+        holder.sizeTv.text = FileUtil.getSize(item.fileSize)
         if (item.modifiedDate == 0L) {
             (holder as NormalViewHolder).dateTv.visibility = View.GONE
         } else {
@@ -60,6 +61,10 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
             View.OnClickListener {
                 onRecycleItemClickListener?.onItemClick(position)
             })
+        holder.itemRl.setOnLongClickListener(View.OnLongClickListener {
+            onRecycleItemLongClickListener?.onItemClick(position)
+            return@OnLongClickListener true
+        })
     }
 
     fun setList(list: ArrayList<FileBean>) {
@@ -78,11 +83,16 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
         this.onRecycleItemClickListener = listener
     }
 
+    fun setOnItemLongClickListener(listener: OnRecycleItemLongClickListener) {
+        this.onRecycleItemLongClickListener = listener
+    }
+
     class NormalViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var itemRl: View
         var titleTv: TextView
         var iconIv: ImageView
         var dateTv: TextView
+        var sizeTv: TextView
 
         init {
             itemRl = view.findViewById(R.id.item_rl) as View
@@ -90,6 +100,7 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
                 view.findViewById<View>(R.id.item_icon) as ImageView
             titleTv = view.findViewById<View>(R.id.title_tv) as TextView
             dateTv = view.findViewById<View>(R.id.date_tv) as TextView
+            sizeTv = view.findViewById<View>(R.id.size_tv) as TextView
         }
     }
 }

@@ -16,6 +16,7 @@ import com.harbinger.parrot.bean.FileBean
 import com.harbinger.parrot.dialog.NormalDialog
 import com.harbinger.parrot.dialog.NormalDialogBuilder
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
+import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
@@ -106,6 +107,23 @@ class RecordListAcitivity : AppCompatActivity() {
                     audioPlayer?.play(list[it].path)
                     initRec()
                 }
+            })
+            mAdapter.setOnItemLongClickListener(OnRecycleItemLongClickListener {
+                NormalDialogBuilder(this)
+                    .setTitle("是否删除该录音?")
+                    .setOkText("是")
+                    .setCancelText("否")
+                    .setOnDialogClickListener(object : NormalDialog.OnDialogClickListener {
+                        override fun onOkClick() {
+                            FileUtil.deleteFile(File(list[it].path))
+                            doGetData()
+                        }
+
+                        override fun onCancelClick() {
+                        }
+                    })
+                    .create()
+                    .show()
             })
             sizeTv.text = "${list.size}"
         } catch (e: Exception) {
