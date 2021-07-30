@@ -17,12 +17,14 @@ import androidx.core.app.NotificationCompat;
 import com.harbinger.parrot.MainActivity;
 import com.harbinger.parrot.R;
 import com.harbinger.parrot.config.ShareKeys;
+import com.harbinger.parrot.event.BatEvent;
 import com.harbinger.parrot.utils.FileUtil;
 import com.harbinger.parrot.utils.SharedPreferencesUtils;
 import com.harbinger.parrot.vad.IVADRecorder;
 import com.harbinger.parrot.vad.VADListener;
 import com.harbinger.parrot.vad.VadRecorder;
 
+import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -70,8 +72,10 @@ public class RecordService extends Service {
         try {
             if (isSpeaking) {
                 remoteViews.setImageViewResource(R.id.app_icon_iv, R.drawable.ic_listening);
+                EventBus.getDefault().post(new BatEvent(BatEvent.BOS));
             } else {
                 remoteViews.setImageViewResource(R.id.app_icon_iv, R.drawable.ic_spy);
+                EventBus.getDefault().post(new BatEvent(BatEvent.EOS));
             }
             notificationManager.notify(10, notificationBuilder.build());
         } catch (Exception e) {

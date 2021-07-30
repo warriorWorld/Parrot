@@ -11,13 +11,13 @@ import android.view.View
 import android.view.WindowManager
 import android.view.animation.LinearInterpolator
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.harbinger.parrot.config.ShareKeys
 import com.harbinger.parrot.dialog.EditDialog
 import com.harbinger.parrot.dialog.EditDialogBuilder
 import com.harbinger.parrot.director.RecordListAcitivity
+import com.harbinger.parrot.event.BatEvent
 import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
@@ -28,20 +28,29 @@ import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.harbinger.parrot.vad.IVADRecorder
 import com.harbinger.parrot.vad.VADListener
 import com.harbinger.parrot.vad.VadRecorder
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 import pub.devrel.easypermissions.EasyPermissions.PermissionCallbacks
 import java.io.File
 
+
 enum class UIStatus {
     IDLE,
     RECORDING,
-    PLAYING
+    PLAYING,
+}
+
+enum class ServiceType {
+    NONE,
+    BAT,
+    PARROT
 }
 
 class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private val TAG = "VAD"
-    private lateinit var statusTv: TextView
     private lateinit var parrotIv: ImageView
     private lateinit var batIv: ImageView
     private lateinit var flounderIv: ImageView
@@ -50,8 +59,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var isRecording = false
     private var isRotaReverse = false
     private var parrotAnimator: ValueAnimator? = null
+    private var batAnimator: ValueAnimator? = null
     private var currentStatus = UIStatus.IDLE
     private var curAngle = 0f
+    private var batCurrentAngle = 0f
+    private var currentService = ServiceType.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,18 +84,24 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun initUI() {
-        statusTv = findViewById(R.id.status_tv)
         parrotIv = findViewById(R.id.parrot_iv)
         batIv = findViewById(R.id.bat_iv)
         flounderIv = findViewById(R.id.flounder_iv)
         parrotIv.setOnClickListener {
             isRecording = if (isRecording) {
                 stopRecord()
+                currentService = ServiceType.NONE
                 false
             } else {
+                //关停蝙蝠
+                val stopIntent = Intent(this, RecordService::class.java)
+                stopService(stopIntent)
+                //启动鹦鹉
                 startRecord()
+                currentService = ServiceType.PARROT
                 true
             }
+            refreshUI()
         }
         parrotIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
@@ -98,12 +116,16 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     RecordService.SERVICE_PCK_NAME
                 )
             ) {
-                Toast.makeText(this@MainActivity,"stop service",Toast.LENGTH_SHORT).show()
                 stopService(stopIntent)
+                currentService = ServiceType.NONE
             } else {
-                Toast.makeText(this@MainActivity,"start service",Toast.LENGTH_SHORT).show()
+                //关停鹦鹉
+                stopRecord()
+                //启动蝙蝠
                 startService(Intent(this@MainActivity, RecordService::class.java))
+                currentService = ServiceType.BAT
             }
+            refreshUI()
         }
         batIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
@@ -129,6 +151,16 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 else {
                     curAngle++
                 }
+            }
+        }
+        batAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 5000
+            repeatMode = ObjectAnimator.RESTART
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                batIv.rotation = batCurrentAngle
+                batCurrentAngle++
             }
         }
     }
@@ -164,13 +196,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 FileUtil.getTempRecordDirectory(),
                 SharedPreferencesUtils.getIntSharedPreferencesData(
                     this,
-                    ShareKeys.PARROT_SILENCE_DURATION
-                    , 800
+                    ShareKeys.PARROT_SILENCE_DURATION, 800
                 ),
                 SharedPreferencesUtils.getIntSharedPreferencesData(
                     this,
-                    ShareKeys.PARROT_SPEECH_DURATION
-                    , 800
+                    ShareKeys.PARROT_SPEECH_DURATION, 800
                 )
             )
             vadRecorder?.setVadListener(object : VADListener {
@@ -197,25 +227,57 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public fun onBatEvent(event: BatEvent) {
+        currentService = ServiceType.BAT
+        when (event.code) {
+            BatEvent.BOS -> {
+                currentStatus = UIStatus.RECORDING
+            }
+            BatEvent.EOS -> {
+                currentStatus = UIStatus.IDLE
+            }
+        }
+        refreshUI()
+    }
+
     private fun refreshUI() {
         runOnUiThread {
+            batIv.alpha = 0.5f
+            parrotIv.alpha = 0.5f
+            when (currentService) {
+                ServiceType.PARROT -> parrotIv.alpha = 1f
+                ServiceType.BAT -> batIv.alpha = 1f
+            }
             when (currentStatus) {
                 UIStatus.IDLE -> {
-                    statusTv.text = "idle"
-//                    parrotIv.setImageResource(R.drawable.ic_parrot1)
+                    stopBatAnim()
                     stopAnim()
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 UIStatus.RECORDING -> {
-                    statusTv.text = "bos"
-//                    parrotIv.setImageResource(R.drawable.ic_parrot2)
-                    startAnim(false)
+                    when (currentService) {
+                        ServiceType.BAT -> {
+                            startBatAnim()
+                        }
+                        ServiceType.PARROT -> {
+                            startAnim(false)
+                        }
+                    }
                     //不锁屏
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
                 UIStatus.PLAYING -> {
-                    statusTv.text = "playing..."
-//                    parrotIv.setImageResource(R.drawable.ic_parrot3)
                     startAnim(true)
                     //不锁屏
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -238,6 +300,19 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         parrotAnimator?.pause()
     }
 
+    private fun startBatAnim() {
+        if (batAnimator?.isStarted!!) {
+            batAnimator?.cancel()
+            batAnimator?.start()
+        } else {
+            batAnimator?.start()
+        }
+    }
+
+    private fun stopBatAnim() {
+        batAnimator?.pause()
+    }
+
     private fun startRecord() {
         vadRecorder?.start()
         currentStatus = UIStatus.IDLE
@@ -253,13 +328,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private fun showParrotSettingsDialog() {
         val currentSilenceDuration = SharedPreferencesUtils.getIntSharedPreferencesData(
             this,
-            ShareKeys.PARROT_SILENCE_DURATION
-            , 800
+            ShareKeys.PARROT_SILENCE_DURATION, 800
         )
         val currentSpeechDurantion = SharedPreferencesUtils.getIntSharedPreferencesData(
             this,
-            ShareKeys.PARROT_SPEECH_DURATION
-            , 800
+            ShareKeys.PARROT_SPEECH_DURATION, 800
         )
         EditDialogBuilder(this)
             .setTitle("设置鹦鹉沉默、语音识别间隔时长(重启后生效)")
@@ -300,13 +373,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private fun showBatSettingsDialog() {
         val currentSilenceDuration = SharedPreferencesUtils.getIntSharedPreferencesData(
             this,
-            ShareKeys.RECORD_SILENCE_DURATION
-            , 800
+            ShareKeys.RECORD_SILENCE_DURATION, 800
         )
         val currentSpeechDurantion = SharedPreferencesUtils.getIntSharedPreferencesData(
             this,
-            ShareKeys.RECORD_SPEECH_DURATION
-            , 800
+            ShareKeys.RECORD_SPEECH_DURATION, 800
         )
         EditDialogBuilder(this)
             .setTitle("设置蝙蝠沉默、语音识别间隔时长(重启后生效)")

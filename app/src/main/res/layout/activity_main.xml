@@ -19,30 +19,34 @@
 
     <ImageView
         android:id="@+id/parrot_iv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:alpha="0.5"
         android:src="@drawable/ic_parrot1"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bat_iv"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/bat_iv"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginBottom="10dp"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
+        android:alpha="0.5"
         android:src="@drawable/ic_bat"
-        app:layout_constraintBottom_toTopOf="@+id/parrot_iv"
-        app:layout_constraintLeft_toLeftOf="@+id/parrot_iv" />
+        app:layout_constraintBottom_toTopOf="@+id/flounder_iv"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/parrot_iv" />
 
     <ImageView
         android:id="@+id/flounder_iv"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="128dp"
+        android:layout_height="128dp"
         android:layout_marginTop="10dp"
         android:src="@drawable/ic_crab"
-        app:layout_constraintRight_toRightOf="@+id/parrot_iv"
-        app:layout_constraintTop_toBottomOf="@+id/parrot_iv" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bat_iv" />
 </androidx.constraintlayout.widget.ConstraintLayout>
