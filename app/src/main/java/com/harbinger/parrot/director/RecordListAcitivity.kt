@@ -2,7 +2,6 @@ package com.harbinger.parrot.director
 
 import android.os.Build
 import android.os.Bundle
-import android.text.TextUtils
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -10,9 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harbinger.parrot.R
-import com.harbinger.parrot.UIStatus
 import com.harbinger.parrot.adapter.FileAdapter
 import com.harbinger.parrot.bean.FileBean
+import com.harbinger.parrot.dialog.ListDialog
 import com.harbinger.parrot.dialog.NormalDialog
 import com.harbinger.parrot.dialog.NormalDialogBuilder
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
@@ -22,7 +21,7 @@ import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.utils.FileUtil
 import java.io.File
-import java.util.ArrayList
+import java.util.*
 
 /**
  * Created by acorn on 2020/11/21.
@@ -36,6 +35,7 @@ class RecordListAcitivity : AppCompatActivity() {
     private val fileModel = FileModel()
     private var audioPlayer: IAudioPlayer? = null
     private var lastPlayPosition = -1
+    private val fileNameOptions = arrayOf("永久保存", "删除")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,26 +109,42 @@ class RecordListAcitivity : AppCompatActivity() {
                 }
             })
             mAdapter.setOnItemLongClickListener(OnRecycleItemLongClickListener {
-                NormalDialogBuilder(this)
-                    .setTitle("是否删除该录音?")
-                    .setOkText("是")
-                    .setCancelText("否")
-                    .setOnDialogClickListener(object : NormalDialog.OnDialogClickListener {
-                        override fun onOkClick() {
-                            FileUtil.deleteFile(File(list[it].path))
-                            doGetData()
-                        }
-
-                        override fun onCancelClick() {
-                        }
-                    })
-                    .create()
-                    .show()
+                showOptionsSelectorDialog(it)
             })
             sizeTv.text = "${list.size}"
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun showOptionsSelectorDialog(position:Int) {
+        val listDialog = ListDialog(this)
+        listDialog.setOnRecycleItemClickListener {
+            when (it) {
+                0 -> {
+
+                }
+                1 -> {
+                    NormalDialogBuilder(this)
+                        .setTitle("是否删除该录音?")
+                        .setOkText("是")
+                        .setCancelText("否")
+                        .setOnDialogClickListener(object : NormalDialog.OnDialogClickListener {
+                            override fun onOkClick() {
+                                FileUtil.deleteFile(File(list[position].path))
+                                doGetData()
+                            }
+
+                            override fun onCancelClick() {
+                            }
+                        })
+                        .create()
+                        .show()
+                }
+            }
+        }
+        listDialog.show()
+        listDialog.setOptionsList(fileNameOptions)
     }
 
     override fun onPause() {
