@@ -68,12 +68,14 @@ class RecordListAcitivity : AppCompatActivity() {
         isInPermanentDirector = false
         list = fileModel.getFileList(FileUtil.getReservedRecordDirectory())
         initRec()
+        deleteIv.visibility=View.VISIBLE
     }
 
     private fun doGetPermanentData() {
         isInPermanentDirector = true
         list = fileModel.getFileList(FileUtil.getPermanentRecordDirectory().path)
         initRec()
+        deleteIv.visibility=View.GONE
     }
 
     override fun onBackPressed() {
@@ -138,7 +140,7 @@ class RecordListAcitivity : AppCompatActivity() {
                 }
             })
             mAdapter.setOnItemLongClickListener(OnRecycleItemLongClickListener {
-                if (list[it].fileType == FileType.FOLDER) {
+                if (list[it].fileType == FileType.FOLDER || isInPermanentDirector) {
                     return@OnRecycleItemLongClickListener
                 }
                 showOptionsSelectorDialog(it)

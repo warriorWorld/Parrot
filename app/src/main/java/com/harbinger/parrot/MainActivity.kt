@@ -88,20 +88,17 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         batIv = findViewById(R.id.bat_iv)
         flounderIv = findViewById(R.id.flounder_iv)
         parrotIv.setOnClickListener {
-            isRecording = if (isRecording) {
-                stopRecord()
+            if (isRecording) {
                 currentService = ServiceType.NONE
-                false
+                stopRecord()
             } else {
                 //关停蝙蝠
                 val stopIntent = Intent(this, RecordService::class.java)
                 stopService(stopIntent)
+                currentService = ServiceType.PARROT
                 //启动鹦鹉
                 startRecord()
-                currentService = ServiceType.PARROT
-                true
             }
-            refreshUI()
         }
         parrotIv.setOnLongClickListener(object : View.OnLongClickListener {
             override fun onLongClick(p0: View?): Boolean {
@@ -111,19 +108,19 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         })
         batIv.setOnClickListener {
             val stopIntent = Intent(this, RecordService::class.java)
-            if (ServiceUtil.isServiceWork(
+            currentService = if (ServiceUtil.isServiceWork(
                     this,
                     RecordService.SERVICE_PCK_NAME
                 )
             ) {
                 stopService(stopIntent)
-                currentService = ServiceType.NONE
+                ServiceType.NONE
             } else {
                 //关停鹦鹉
                 stopRecord()
                 //启动蝙蝠
                 startService(Intent(this@MainActivity, RecordService::class.java))
-                currentService = ServiceType.BAT
+                ServiceType.BAT
             }
             refreshUI()
         }
@@ -170,12 +167,14 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         audioPlayer?.setPlayListener(object : PlayListener {
             override fun onBegin() {
                 currentStatus = UIStatus.PLAYING
+                currentService = ServiceType.PARROT
                 refreshUI()
             }
 
             override fun onComplete() {
                 startRecord()
                 currentStatus = UIStatus.IDLE
+                currentService = ServiceType.PARROT
                 refreshUI()
             }
         })
@@ -317,12 +316,14 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         vadRecorder?.start()
         currentStatus = UIStatus.IDLE
         refreshUI()
+        isRecording=true
     }
 
     private fun stopRecord() {
         vadRecorder?.stop()
         currentStatus = UIStatus.IDLE
         refreshUI()
+        isRecording=false
     }
 
     private fun showParrotSettingsDialog() {
