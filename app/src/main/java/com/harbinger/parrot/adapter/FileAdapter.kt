@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.harbinger.parrot.R
 import com.harbinger.parrot.bean.FileBean
+import com.harbinger.parrot.bean.FileType
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
 import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
 import com.harbinger.parrot.utils.FileUtil
@@ -48,7 +49,17 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
         } else {
             (holder as NormalViewHolder).titleTv.setTextColor(context.resources.getColor(R.color.main_text_color))
         }
-        holder.sizeTv.text = FileUtil.getSize(item.fileSize)
+
+        when(item.fileType){
+            FileType.FILE->{
+                holder.sizeTv.text = FileUtil.getSize(item.fileSize)
+                holder.iconIv.setImageResource(R.drawable.ic_flounder)
+            }
+            FileType.FOLDER->{
+                holder.sizeTv.text =""
+                holder.iconIv.setImageResource(R.drawable.ic_crab)
+            }
+        }
         if (item.modifiedDate == 0L) {
             (holder as NormalViewHolder).dateTv.visibility = View.GONE
         } else {

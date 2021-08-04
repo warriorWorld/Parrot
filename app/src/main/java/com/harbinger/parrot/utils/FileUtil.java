@@ -40,6 +40,16 @@ public class FileUtil {
         return pcmDirectoryPath;
     }
 
+    public static File getPermanentRecordDirectory() {
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator +
+                "Bat" + File.separator + "Permanent" + File.separator;
+        File directory = new File(path);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        return directory;
+    }
+
     public static String getWritablePcmName(Context context) {
         return System.currentTimeMillis() + ".pcm";
     }
@@ -172,7 +182,7 @@ public class FileUtil {
      * @param destDir 复制到的目标目录 eg:/mnt/sdcard/db/
      * @return
      */
-    public boolean copyDir(String srcDir, String destDir) {
+    public static boolean copyDir(String srcDir, String destDir) {
         File sourceDir = new File(srcDir);
         //判断文件目录是否存在
         if (!sourceDir.exists()) {
@@ -209,7 +219,7 @@ public class FileUtil {
      * @param destDir
      * @return
      */
-    public boolean copyFileToDir(String srcFile, String destDir) {
+    public static boolean copyFileToDir(String srcFile, String destDir) {
         File fileDir = new File(destDir);
         if (!fileDir.exists()) {
             fileDir.mkdir();
@@ -238,7 +248,7 @@ public class FileUtil {
      * @param destFile 复制到的目标文件
      * @return
      */
-    public boolean copyFile(String srcFile, String destFile) {
+    public static boolean copyFile(String srcFile, String destFile) {
         try {
             InputStream streamFrom = new FileInputStream(srcFile);
             OutputStream streamTo = new FileOutputStream(destFile);
@@ -262,7 +272,7 @@ public class FileUtil {
      * @param destDir
      * @return
      */
-    public boolean moveFile(String srcFile, String destDir) {
+    public static boolean moveFile(String srcFile, String destDir) {
         //复制后删除原目录
         if (copyDir(srcFile, destDir)) {
             deleteFile(new File(srcFile));
@@ -307,6 +317,36 @@ public class FileUtil {
                 file.delete();
             } else {
                 clearDirectory(file);
+            }
+        }
+    }
+
+    public static void clearDirectoryExcept(File dir, File except) {
+        Log.d(TAG, "clear dir:" + dir);
+        if (dir.isFile()) {
+            Log.d(TAG, "clear dir is file");
+            dir.delete();
+            return;
+        }
+        File[] files = dir.listFiles();
+        if (null == files || files.length == 0) {
+            Log.d(TAG, "dir is empty");
+            return;
+        }
+        for (File file : files) {
+            if (file.isFile()) {
+                if (except.isFile() && except.getPath().equals(file.getPath())) {
+                    Log.d(TAG, "file is exception,so we'll ignore it");
+                    continue;
+                }
+                Log.d(TAG, "delete " + file.getName());
+                file.delete();
+            } else {
+                if (except.isDirectory() && except.getPath().equals(file.getPath())) {
+                    Log.d(TAG, "directory is exception,so we'll ignore it");
+                    continue;
+                }
+                clearDirectoryExcept(file, except);
             }
         }
     }

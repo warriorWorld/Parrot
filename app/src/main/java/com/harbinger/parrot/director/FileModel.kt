@@ -39,7 +39,7 @@ class FileModel : IFileModel {
                 continue
             }
         }
-        result.sortBy { it.name }
+        result.sortWith(compareBy({ it.fileType }, { it.name }))
         return result
     }
 }
