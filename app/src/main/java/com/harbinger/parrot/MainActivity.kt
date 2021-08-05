@@ -114,6 +114,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 )
             ) {
                 stopService(stopIntent)
+                currentStatus=UIStatus.IDLE
                 ServiceType.NONE
             } else {
                 //关停鹦鹉
