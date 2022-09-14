@@ -23,6 +23,8 @@
         <activity android:name=".director.RecordListAcitivity" />
 
         <service android:name=".service.RecordService" />
+        <service android:name=".service.SilenceRecordService" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.harbinger.parrot.provider"

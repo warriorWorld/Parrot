@@ -22,6 +22,7 @@ import com.harbinger.parrot.player.AudioPlayer
 import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.service.RecordService
+import com.harbinger.parrot.service.SilenceRecordService
 import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.utils.ServiceUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
@@ -46,7 +47,8 @@ enum class UIStatus {
 enum class ServiceType {
     NONE,
     BAT,
-    PARROT
+    PARROT,
+    SILENCE,
 }
 
 class MainActivity : AppCompatActivity(), PermissionCallbacks {
@@ -54,15 +56,18 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private lateinit var parrotIv: ImageView
     private lateinit var batIv: ImageView
     private lateinit var flounderIv: ImageView
+    private lateinit var silenceIv: ImageView
     private var vadRecorder: IVADRecorder? = null
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
     private var isRotaReverse = false
     private var parrotAnimator: ValueAnimator? = null
     private var batAnimator: ValueAnimator? = null
+    private var silenceAnimator: ValueAnimator? = null
     private var currentStatus = UIStatus.IDLE
     private var curAngle = 0f
     private var batCurrentAngle = 0f
+    private var silenceCurrentAngle = 0f
     private var currentService = ServiceType.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,6 +91,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private fun initUI() {
         parrotIv = findViewById(R.id.parrot_iv)
         batIv = findViewById(R.id.bat_iv)
+        silenceIv = findViewById(R.id.silence_iv)
         flounderIv = findViewById(R.id.flounder_iv)
         parrotIv.setOnClickListener {
             if (isRecording) {
@@ -114,7 +120,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 )
             ) {
                 stopService(stopIntent)
-                currentStatus=UIStatus.IDLE
+                currentStatus = UIStatus.IDLE
                 ServiceType.NONE
             } else {
                 //关停鹦鹉
@@ -131,6 +137,25 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 return false;
             }
         })
+        silenceIv.setOnClickListener {
+            val stopIntent = Intent(this, SilenceRecordService::class.java)
+            currentService = if (ServiceUtil.isServiceWork(
+                    this,
+                    SilenceRecordService.SERVICE_PCK_NAME
+                )
+            ) {
+                stopService(stopIntent)
+                currentStatus = UIStatus.IDLE
+                ServiceType.NONE
+            } else {
+                //关停鹦鹉
+                stopRecord()
+                //启动silence record
+                startService(Intent(this@MainActivity, SilenceRecordService::class.java))
+                ServiceType.SILENCE
+            }
+            refreshUI()
+        }
         flounderIv.setOnClickListener {
             startActivity(Intent(this@MainActivity, RecordListAcitivity::class.java))
         }
@@ -159,6 +184,16 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             addUpdateListener {
                 batIv.rotation = batCurrentAngle
                 batCurrentAngle++
+            }
+        }
+        silenceAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 5000
+            repeatMode = ObjectAnimator.RESTART
+            repeatCount = ObjectAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                silenceIv.rotation = silenceCurrentAngle
+                silenceCurrentAngle++
             }
         }
     }
@@ -239,7 +274,6 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public fun onBatEvent(event: BatEvent) {
-        currentService = ServiceType.BAT
         when (event.code) {
             BatEvent.BOS -> {
                 currentStatus = UIStatus.RECORDING
@@ -255,13 +289,16 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         runOnUiThread {
             batIv.alpha = 0.5f
             parrotIv.alpha = 0.5f
+            silenceIv.alpha=0.5f
             when (currentService) {
                 ServiceType.PARROT -> parrotIv.alpha = 1f
                 ServiceType.BAT -> batIv.alpha = 1f
+                ServiceType.SILENCE -> silenceIv.alpha = 1f
             }
             when (currentStatus) {
                 UIStatus.IDLE -> {
                     stopBatAnim()
+                    stopSilenceAnim()
                     stopAnim()
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
@@ -269,6 +306,9 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     when (currentService) {
                         ServiceType.BAT -> {
                             startBatAnim()
+                        }
+                        ServiceType.SILENCE -> {
+                            startSilenceAnim()
                         }
                         ServiceType.PARROT -> {
                             startAnim(false)
@@ -313,18 +353,31 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         batAnimator?.pause()
     }
 
+    private fun startSilenceAnim() {
+        if (silenceAnimator?.isStarted!!) {
+            silenceAnimator?.cancel()
+            silenceAnimator?.start()
+        } else {
+            silenceAnimator?.start()
+        }
+    }
+
+    private fun stopSilenceAnim() {
+        silenceAnimator?.pause()
+    }
+
     private fun startRecord() {
         vadRecorder?.start()
         currentStatus = UIStatus.IDLE
         refreshUI()
-        isRecording=true
+        isRecording = true
     }
 
     private fun stopRecord() {
         vadRecorder?.stop()
         currentStatus = UIStatus.IDLE
         refreshUI()
-        isRecording=false
+        isRecording = false
     }
 
     private fun showParrotSettingsDialog() {
