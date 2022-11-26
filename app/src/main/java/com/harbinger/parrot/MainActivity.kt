@@ -283,20 +283,18 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun playAudio(path: String) {
-        mH.postDelayed(Runnable {
-            val uri = Uri.fromFile(File(path))
-            Log.d(TAG, "play audio:$path,${uri.path}")
-            currentStatus = UIStatus.PLAYING
-            currentService = ServiceType.PARROT
-            refreshUI()
+        val uri = Uri.fromFile(File(path))
+        Log.d(TAG, "play audio:$path,${uri.path}")
+        currentStatus = UIStatus.PLAYING
+        currentService = ServiceType.PARROT
+        refreshUI()
 
-            if (exoPlayer?.isPlaying == true) {
-                exoPlayer?.stop()
-            }
-            exoPlayer?.setMediaItem(MediaItem.fromUri(uri))
-            exoPlayer?.prepare()
-            exoPlayer?.play()
-        },200)
+        if (exoPlayer?.isPlaying == true) {
+            exoPlayer?.stop()
+        }
+        exoPlayer?.setMediaItem(MediaItem.fromUri(uri))
+        exoPlayer?.prepare()
+        exoPlayer?.play()
     }
 
     override fun onStart() {
