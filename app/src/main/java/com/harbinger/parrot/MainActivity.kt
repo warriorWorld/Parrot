@@ -6,6 +6,8 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -69,6 +71,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var batCurrentAngle = 0f
     private var silenceCurrentAngle = 0f
     private var currentService = ServiceType.NONE
+    private val mH=Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -247,10 +250,10 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
 
                 override fun onEos(recordPath: String) {
                     Log.d(TAG, "eos")
-                    runOnUiThread {
+                    mH.postDelayed(Runnable {
                         stopRecord()
                         audioPlayer?.play(recordPath)
-                    }
+                    },100)
                 }
             })
         } else {
