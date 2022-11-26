@@ -1,15 +1,17 @@
 package com.harbinger.parrot.director
 
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
 import com.harbinger.parrot.R
 import com.harbinger.parrot.adapter.FileAdapter
 import com.harbinger.parrot.bean.FileBean
@@ -17,13 +19,8 @@ import com.harbinger.parrot.bean.FileType
 import com.harbinger.parrot.dialog.*
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
 import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
-import com.harbinger.parrot.player.AudioPlayer
-import com.harbinger.parrot.player.IAudioPlayer
-import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.utils.FileUtil
 import java.io.File
-import java.util.*
-import java.util.logging.Logger
 
 /**
  * Created by acorn on 2020/11/21.
@@ -35,11 +32,11 @@ class RecordListAcitivity : AppCompatActivity() {
     private lateinit var deleteIv: ImageView
     private var mAdapter = FileAdapter(this)
     private val fileModel = FileModel()
-    private var audioPlayer: IAudioPlayer? = null
     private var lastPlayPosition = -1
     private val fileNameOptions = arrayOf("永久保存", "删除")
     private val permanentDirector = FileUtil.getPermanentRecordDirectory()
     private var isInPermanentDirector = false
+    private var exoPlayer: ExoPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,28 +51,22 @@ class RecordListAcitivity : AppCompatActivity() {
     }
 
     private fun initAudioPlayer() {
-        audioPlayer = AudioPlayer(this)
-        audioPlayer?.setPlayListener(object : PlayListener {
-            override fun onBegin() {
-            }
-
-            override fun onComplete() {
-            }
-        })
+        exoPlayer = ExoPlayer.Builder(this).build()
+        exoPlayer?.playWhenReady = true
     }
 
     private fun doGetData() {
         isInPermanentDirector = false
         list = fileModel.getFileList(FileUtil.getReservedRecordDirectory())
         initRec()
-        deleteIv.visibility=View.VISIBLE
+        deleteIv.visibility = View.VISIBLE
     }
 
     private fun doGetPermanentData() {
         isInPermanentDirector = true
         list = fileModel.getFileList(FileUtil.getPermanentRecordDirectory().path)
         initRec()
-        deleteIv.visibility=View.GONE
+        deleteIv.visibility = View.GONE
     }
 
     override fun onBackPressed() {
@@ -129,11 +120,10 @@ class RecordListAcitivity : AppCompatActivity() {
                     }
                     FileType.FILE -> {
                         if (it == lastPlayPosition) {
-                            audioPlayer?.stop()
+                            exoPlayer?.stop()
                         } else {
                             lastPlayPosition = it
-                            audioPlayer?.stop()
-                            audioPlayer?.play(list[it].path)
+                            playAudio(list[it].path)
                             initRec()
                         }
                     }
@@ -149,6 +139,15 @@ class RecordListAcitivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun playAudio(path: String) {
+        if (exoPlayer?.isPlaying == true) {
+            exoPlayer?.stop()
+        }
+        exoPlayer?.setMediaItem(MediaItem.fromUri(Uri.fromFile(File(path))))
+        exoPlayer?.prepare()
+        exoPlayer?.play()
     }
 
     private fun showOptionsSelectorDialog(position: Int) {
@@ -206,6 +205,11 @@ class RecordListAcitivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        audioPlayer?.stop()
+        exoPlayer?.stop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        exoPlayer?.release()
     }
 }

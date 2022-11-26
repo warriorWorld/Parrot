@@ -2,7 +2,9 @@ package com.harbinger.parrot.vad
 
 import android.content.Context
 import android.util.Log
+import com.google.android.exoplayer2.extractor.wav.WavExtractor
 import com.harbinger.parrot.config.ShareKeys
+import com.harbinger.parrot.utils.AudioUtil
 import com.harbinger.parrot.utils.CommonUtil
 import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
@@ -61,7 +63,8 @@ class VadRecorder(
                         pcmPath?.let {
                             Log.d(TAG, "on eos")
                             val wavPath = pcmPath.replace(".pcm", ".wav")
-                            FileUtil.savePcmToWav(File(pcmPath), File(wavPath))
+//                            FileUtil.savePcmToWav(File(pcmPath), File(wavPath))
+                            AudioUtil.PCMToWAV(File(pcmPath), File(wavPath), 1, 16000, 16)
                             FileUtil.deleteFile(File(pcmPath))
                             listener?.onEos(wavPath)
                         }
@@ -83,7 +86,7 @@ class VadRecorder(
                     if (fos != null && isSpeaking) {
                         val bytes = CommonUtil.shortToBytes(buffer)
                         try {
-                            Log.d(TAG, "write to pcm")
+//                            Log.d(TAG, "write to pcm")
                             fos!!.write(bytes)
                         } catch (e: IOException) {
                             e.printStackTrace()
@@ -91,8 +94,8 @@ class VadRecorder(
                     }
                 }
             }, VadConfig.newBuilder()
-                .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_48K)
-                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_1440)
+                .setSampleRate(VadConfig.SampleRate.SAMPLE_RATE_16K)
+                .setFrameSize(VadConfig.FrameSize.FRAME_SIZE_160)
                 .setMode(VadConfig.Mode.VERY_AGGRESSIVE)
                 .setSilenceDurationMillis(silenceDuration)
                 .setVoiceDurationMillis(speechDuration)

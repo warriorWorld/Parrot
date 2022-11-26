@@ -18,7 +18,7 @@ import java.io.OutputStream;
  */
 public class FileUtil {
     private static final String TAG = "FileUtil";
-    private static final int SAMPLE_RATE_INHZ = 48000;
+    private static final int SAMPLE_RATE_INHZ = 16000;
     private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 

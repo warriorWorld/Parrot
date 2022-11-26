@@ -13,6 +13,8 @@ import com.konovalov.vad.VadListener;
 import static android.media.AudioFormat.CHANNEL_IN_MONO;
 import static android.media.AudioFormat.CHANNEL_IN_STEREO;
 
+import vip.inode.demo.webrtc.NoiseSuppressorUtils;
+
 /**
  * Created by George Konovalov on 11/16/2019.
  */
@@ -28,6 +30,9 @@ public class VoiceRecorder {
 
     private boolean isListening = false;
     private static final String TAG = "VoiceRecorder";
+    //降噪
+    private long nsHandler;
+    private NoiseSuppressorUtils noiseSuppressorUtils = new NoiseSuppressorUtils();
 
     public VoiceRecorder(Context context, Listener callback, VadConfig config) {
         this.context = context;
@@ -41,6 +46,9 @@ public class VoiceRecorder {
 
     public void start() {
         stop();
+        nsHandler = noiseSuppressorUtils.nsxCreate();
+        noiseSuppressorUtils.nsxInit(nsHandler, vad.getConfig().getSampleRate().getValue());
+        noiseSuppressorUtils.nsxSetPolicy(nsHandler, 2);
         audioRecord = createAudioRecord();
         if (audioRecord != null) {
             isListening = true;
@@ -60,6 +68,9 @@ public class VoiceRecorder {
         if (thread != null) {
             thread.interrupt();
             thread = null;
+        }
+        if (nsHandler > 0) {
+            noiseSuppressorUtils.nsxFree(nsHandler);
         }
         if (audioRecord != null) {
             try {
@@ -114,14 +125,18 @@ public class VoiceRecorder {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
 
             while (!Thread.interrupted() && isListening && audioRecord != null) {
-                short[] buffer = new short[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels() * 2];
+                short[] buffer = new short[vad.getConfig().getFrameSize().getValue() * getNumberOfChannels()];
+                short[] bufferDenoised = new short[buffer.length];
+
                 audioRecord.read(buffer, 0, buffer.length);
-                boolean isSpeech = vad.isSpeech(buffer);
+                noiseSuppressorUtils.nsxProcess(nsHandler, buffer, 1, bufferDenoised);
+
+                boolean isSpeech = vad.isSpeech(bufferDenoised);
                 if (isSpeech) {
                     callback.onSpeechDetected();
                 }
-                isSpeechDetected(buffer);
-                callback.onBuffer(buffer);
+                isSpeechDetected(bufferDenoised);
+                callback.onBuffer(bufferDenoised);
             }
         }
 

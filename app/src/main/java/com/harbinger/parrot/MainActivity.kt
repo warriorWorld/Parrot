@@ -4,8 +4,12 @@ import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -13,14 +17,15 @@ import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
 import com.harbinger.parrot.config.ShareKeys
 import com.harbinger.parrot.dialog.EditDialog
 import com.harbinger.parrot.dialog.EditDialogBuilder
 import com.harbinger.parrot.director.RecordListAcitivity
 import com.harbinger.parrot.event.BatEvent
-import com.harbinger.parrot.player.AudioPlayer
-import com.harbinger.parrot.player.IAudioPlayer
-import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.service.RecordService
 import com.harbinger.parrot.service.SilenceRecordService
 import com.harbinger.parrot.utils.FileUtil
@@ -58,7 +63,6 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private lateinit var flounderIv: ImageView
     private lateinit var silenceIv: ImageView
     private var vadRecorder: IVADRecorder? = null
-    private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
     private var isRotaReverse = false
     private var parrotAnimator: ValueAnimator? = null
@@ -69,6 +73,8 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var batCurrentAngle = 0f
     private var silenceCurrentAngle = 0f
     private var currentService = ServiceType.NONE
+    private var exoPlayer: ExoPlayer? = null
+    private val mH = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -199,15 +205,29 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun initAudioPlayer() {
-        audioPlayer = AudioPlayer(this)
-        audioPlayer?.setPlayListener(object : PlayListener {
-            override fun onBegin() {
-                currentStatus = UIStatus.PLAYING
-                currentService = ServiceType.PARROT
-                refreshUI()
+//        mAudioPlayer = new AudioPlayer(this);
+        exoPlayer = ExoPlayer.Builder(this).build()
+        exoPlayer?.playWhenReady = true
+        exoPlayer?.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                Log.d(TAG, "<<<<$playbackState>>>>")
+                if (playbackState == Player.STATE_ENDED) {
+                    startRecord()
+                    currentStatus = UIStatus.IDLE
+                    currentService = ServiceType.PARROT
+                    refreshUI()
+                }
             }
 
-            override fun onComplete() {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                super.onPlayWhenReadyChanged(playWhenReady, reason)
+                Log.d(TAG, "<<<<$playWhenReady,$reason>>>>")
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+                Log.d(TAG, "<<<<$error>>>>")
                 startRecord()
                 currentStatus = UIStatus.IDLE
                 currentService = ServiceType.PARROT
@@ -249,7 +269,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                     Log.d(TAG, "eos")
                     runOnUiThread {
                         stopRecord()
-                        audioPlayer?.play(recordPath)
+                        playAudio(recordPath)
                     }
                 }
             })
@@ -262,6 +282,23 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         }
     }
 
+    private fun playAudio(path: String) {
+        mH.postDelayed(Runnable {
+            val uri = Uri.fromFile(File(path))
+            Log.d(TAG, "play audio:$path,${uri.path}")
+            currentStatus = UIStatus.PLAYING
+            currentService = ServiceType.PARROT
+            refreshUI()
+
+            if (exoPlayer?.isPlaying == true) {
+                exoPlayer?.stop()
+            }
+            exoPlayer?.setMediaItem(MediaItem.fromUri(uri))
+            exoPlayer?.prepare()
+            exoPlayer?.play()
+        },200)
+    }
+
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
@@ -270,6 +307,11 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     override fun onStop() {
         super.onStop()
         EventBus.getDefault().unregister(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        exoPlayer?.release()
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -289,7 +331,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         runOnUiThread {
             batIv.alpha = 0.5f
             parrotIv.alpha = 0.5f
-            silenceIv.alpha=0.5f
+            silenceIv.alpha = 0.5f
             when (currentService) {
                 ServiceType.PARROT -> parrotIv.alpha = 1f
                 ServiceType.BAT -> batIv.alpha = 1f
