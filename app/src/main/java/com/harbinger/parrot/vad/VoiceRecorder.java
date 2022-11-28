@@ -47,7 +47,7 @@ public class VoiceRecorder {
 
     public void start() {
         stop();
-        if (nsHandler > 0) {
+        if (nsHandler != 0) {
             noiseSuppressorUtils.nsxFree(nsHandler);
         }
         nsHandler = noiseSuppressorUtils.nsxCreate();
