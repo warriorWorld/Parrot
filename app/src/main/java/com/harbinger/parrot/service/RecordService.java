@@ -97,6 +97,11 @@ public class RecordService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        startRecord();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void startRecord() {
         recorder.start(new VadProcesser(
                 RooboServiceConfig.INSTANCE.getPersistedPcmPath(),
                 new Function0<Unit>() {
@@ -115,12 +120,12 @@ public class RecordService extends Service {
             @Override
             public Unit invoke(File file) {
                 String wavPath = file.getAbsolutePath().replace(".pcm", ".wav");
-                FileUtil.savePcmToWav(file,new File(wavPath));
+                FileUtil.savePcmToWav(file, new File(wavPath));
                 FileUtil.deleteFile(file);
+                startRecord();
                 return null;
             }
         }));
-        return super.onStartCommand(intent, flags, startId);
     }
 
     @Nullable
