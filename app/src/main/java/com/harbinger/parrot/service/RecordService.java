@@ -16,16 +16,24 @@ import androidx.core.app.NotificationCompat;
 
 import com.harbinger.parrot.MainActivity;
 import com.harbinger.parrot.R;
+import com.harbinger.parrot.config.RooboServiceConfig;
 import com.harbinger.parrot.config.ShareKeys;
 import com.harbinger.parrot.event.BatEvent;
 import com.harbinger.parrot.utils.FileUtil;
 import com.harbinger.parrot.utils.SharedPreferencesUtils;
 import com.harbinger.parrot.vad.IVADRecorder;
 import com.harbinger.parrot.vad.VADListener;
+import com.harbinger.parrot.vad.VadProcesser;
 import com.harbinger.parrot.vad.VadRecorder;
 
 import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 
 
 public class RecordService extends Service {
@@ -34,7 +42,7 @@ public class RecordService extends Service {
     private NotificationCompat.Builder notificationBuilder;
     private RemoteViews remoteViews;
     private NotificationManager notificationManager;
-    private IVADRecorder recorder;
+    private VadRecorder recorder;
 
     @Override
     public void onCreate() {
@@ -84,31 +92,34 @@ public class RecordService extends Service {
     }
 
     private void initRecorder() {
-        recorder = new VadRecorder(this, FileUtil.getReservedRecordDirectory(), SharedPreferencesUtils.getIntSharedPreferencesData(
-                this,
-                ShareKeys.RECORD_SILENCE_DURATION
-                , 800
-        ), SharedPreferencesUtils.getIntSharedPreferencesData(
-                this,
-                ShareKeys.RECORD_SPEECH_DURATION
-                , 800
-        ));
-        recorder.setVadListener(new VADListener() {
-            @Override
-            public void onBos() {
-                refreshUI(true);
-            }
-
-            @Override
-            public void onEos(@NotNull String recordPath) {
-                refreshUI(false);
-            }
-        });
+        recorder = new VadRecorder();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        recorder.start();
+        recorder.start(new VadProcesser(
+                RooboServiceConfig.INSTANCE.getPersistedPcmPath(),
+                new Function0<Unit>() {
+                    @Override
+                    public Unit invoke() {
+                        refreshUI(true);
+                        return null;
+                    }
+                }, new Function0<Unit>() {
+            @Override
+            public Unit invoke() {
+                refreshUI(false);
+                return null;
+            }
+        }, new Function1<File, Unit>() {
+            @Override
+            public Unit invoke(File file) {
+                String wavPath = file.getAbsolutePath().replace(".pcm", ".wav");
+                FileUtil.savePcmToWav(file,new File(wavPath));
+                FileUtil.deleteFile(file);
+                return null;
+            }
+        }));
         return super.onStartCommand(intent, flags, startId);
     }
 

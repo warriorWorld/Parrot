@@ -15,6 +15,7 @@ import android.view.animation.LinearInterpolator
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.harbinger.parrot.config.RooboServiceConfig
 import com.harbinger.parrot.config.ShareKeys
 import com.harbinger.parrot.dialog.EditDialog
 import com.harbinger.parrot.dialog.EditDialogBuilder
@@ -30,6 +31,7 @@ import com.harbinger.parrot.utils.ServiceUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
 import com.harbinger.parrot.vad.IVADRecorder
 import com.harbinger.parrot.vad.VADListener
+import com.harbinger.parrot.vad.VadProcesser
 import com.harbinger.parrot.vad.VadRecorder
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -59,7 +61,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private lateinit var batIv: ImageView
     private lateinit var flounderIv: ImageView
     private lateinit var silenceIv: ImageView
-    private var vadRecorder: IVADRecorder? = null
+    private var vadRecorder: VadRecorder? = null
     private var audioPlayer: IAudioPlayer? = null
     private var isRecording = false
     private var isRotaReverse = false
@@ -71,7 +73,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     private var batCurrentAngle = 0f
     private var silenceCurrentAngle = 0f
     private var currentService = ServiceType.NONE
-    private val mH=Handler(Looper.getMainLooper())
+    private val mH = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,33 +231,17 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         if (EasyPermissions.hasPermissions(this, *perms)) {
             // Already have permission, do the thing
             // ...
-            vadRecorder = VadRecorder(
-                this.applicationContext,
-                FileUtil.getTempRecordDirectory(),
+            RooboServiceConfig.silenceDurationMillis =
                 SharedPreferencesUtils.getIntSharedPreferencesData(
                     this,
                     ShareKeys.PARROT_SILENCE_DURATION, 800
-                ),
+                )
+            RooboServiceConfig.voiceDurationMillis =
                 SharedPreferencesUtils.getIntSharedPreferencesData(
                     this,
                     ShareKeys.PARROT_SPEECH_DURATION, 800
                 )
-            )
-            vadRecorder?.setVadListener(object : VADListener {
-                override fun onBos() {
-                    Log.d(TAG, "bos")
-                    currentStatus = UIStatus.RECORDING
-                    refreshUI()
-                }
-
-                override fun onEos(recordPath: String) {
-                    Log.d(TAG, "eos")
-                    mH.postDelayed(Runnable {
-                        stopRecord()
-                        audioPlayer?.play(recordPath)
-                    },100)
-                }
-            })
+            vadRecorder = VadRecorder()
         } else {
             // Do not have permissions, request them now
             EasyPermissions.requestPermissions(
@@ -292,7 +278,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
         runOnUiThread {
             batIv.alpha = 0.5f
             parrotIv.alpha = 0.5f
-            silenceIv.alpha=0.5f
+            silenceIv.alpha = 0.5f
             when (currentService) {
                 ServiceType.PARROT -> parrotIv.alpha = 1f
                 ServiceType.BAT -> batIv.alpha = 1f
@@ -370,7 +356,21 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
     }
 
     private fun startRecord() {
-        vadRecorder?.start()
+        vadRecorder?.start(VadProcesser(RooboServiceConfig.pcmPath, {
+            Log.d(TAG, "bos")
+            currentStatus = UIStatus.RECORDING
+            refreshUI()
+        }, {
+            Log.d(TAG, "eos")
+
+        }) { pcm ->
+            mH.postDelayed(Runnable {
+                stopRecord()
+                val wavPath = pcm.absolutePath.replace(".pcm", ".wav")
+                FileUtil.savePcmToWav(pcm, File(wavPath))
+                audioPlayer?.play(wavPath)
+            }, 100)
+        })
         currentStatus = UIStatus.IDLE
         refreshUI()
         isRecording = true
