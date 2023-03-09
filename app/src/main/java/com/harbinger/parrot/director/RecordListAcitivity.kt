@@ -1,15 +1,21 @@
 package com.harbinger.parrot.director
 
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.PlaybackException
+import com.google.android.exoplayer2.Player
 import com.harbinger.parrot.R
 import com.harbinger.parrot.adapter.FileAdapter
 import com.harbinger.parrot.bean.FileBean
@@ -17,29 +23,30 @@ import com.harbinger.parrot.bean.FileType
 import com.harbinger.parrot.dialog.*
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
 import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
-import com.harbinger.parrot.player.AudioPlayer
-import com.harbinger.parrot.player.IAudioPlayer
-import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.utils.FileUtil
 import java.io.File
 import java.util.*
-import java.util.logging.Logger
 
 /**
  * Created by acorn on 2020/11/21.
  */
 class RecordListAcitivity : AppCompatActivity() {
+    private val TAG = "RecordListAcitivity"
     private var list = ArrayList<FileBean>()
     private lateinit var fileRcv: RecyclerView
     private lateinit var sizeTv: TextView
     private lateinit var deleteIv: ImageView
     private var mAdapter = FileAdapter(this)
     private val fileModel = FileModel()
-    private var audioPlayer: IAudioPlayer? = null
     private var lastPlayPosition = -1
     private val fileNameOptions = arrayOf("永久保存", "删除")
     private val permanentDirector = FileUtil.getPermanentRecordDirectory()
     private var isInPermanentDirector = false
+    private lateinit var progressSb: SeekBar
+    private lateinit var playBtn: ImageView
+    private lateinit var previousBtn: ImageView
+    private lateinit var nextBtn: ImageView
+    private var exoPlayer: ExoPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,12 +61,31 @@ class RecordListAcitivity : AppCompatActivity() {
     }
 
     private fun initAudioPlayer() {
-        audioPlayer = AudioPlayer(this)
-        audioPlayer?.setPlayListener(object : PlayListener {
-            override fun onBegin() {
+//        mAudioPlayer = new AudioPlayer(this);
+        exoPlayer = ExoPlayer.Builder(this).build()
+        exoPlayer!!.playWhenReady = true
+        exoPlayer!!.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                Log.d(TAG, "<<<<$playbackState>>>>")
+//                if (playbackState == Player.STATE_ENDED) {
+//                    notifyMimirAudioCompleted()
+//                } else if (playbackState == Player.STATE_READY && null != currentMimirAudioStateListener) {
+//                    if (null != mMimirView) {
+//                        mMimirView.toggleState(MimirState.SPEAKING)
+//                    }
+//                }
             }
 
-            override fun onComplete() {
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                super.onPlayWhenReadyChanged(playWhenReady, reason)
+                Log.d(TAG, "<<<<$playWhenReady,$reason>>>>")
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                super.onPlayerError(error)
+                Log.d(TAG, "<<<<$error>>>>")
+//                notifyMimirAudioCompleted()
             }
         })
     }
@@ -68,14 +94,14 @@ class RecordListAcitivity : AppCompatActivity() {
         isInPermanentDirector = false
         list = fileModel.getFileList(FileUtil.getReservedRecordDirectory())
         initRec()
-        deleteIv.visibility=View.VISIBLE
+        deleteIv.visibility = View.VISIBLE
     }
 
     private fun doGetPermanentData() {
         isInPermanentDirector = true
         list = fileModel.getFileList(FileUtil.getPermanentRecordDirectory().path)
         initRec()
-        deleteIv.visibility=View.GONE
+        deleteIv.visibility = View.GONE
     }
 
     override fun onBackPressed() {
@@ -90,6 +116,10 @@ class RecordListAcitivity : AppCompatActivity() {
         fileRcv = findViewById(R.id.file_rcv)
         sizeTv = findViewById(R.id.file_size_tv)
         deleteIv = findViewById(R.id.delete_iv)
+        progressSb = findViewById(R.id.progress_sb)
+        playBtn = findViewById(R.id.play_btn)
+        previousBtn = findViewById(R.id.previous_btn)
+        nextBtn = findViewById(R.id.next_btn)
         fileRcv.layoutManager = LinearLayoutManager(this)
         fileRcv.isFocusableInTouchMode = false
         fileRcv.isFocusable = false
@@ -117,6 +147,25 @@ class RecordListAcitivity : AppCompatActivity() {
         }
     }
 
+    private fun play(index: Int, seekTo: Int = 0) {
+        lastPlayPosition = index
+        if (exoPlayer?.isPlaying == true) {
+            exoPlayer?.stop()
+        }
+        val path="file:///${list[index].path}"
+        Log.d(TAG, "play:$path")
+        exoPlayer?.setMediaItem(MediaItem.fromUri(path))
+
+        if (seekTo > 0) {
+            exoPlayer?.seekTo(seekTo * 1000L)
+        }
+        exoPlayer?.prepare()
+        exoPlayer?.play()
+//        if (null != audioStateListener) {
+//            audioStateListener.onGetDuration((exoPlayer!!.duration / 1000f).toInt())
+//        }
+    }
+
     private fun initRec() {
         try {
             mAdapter.setList(list)
@@ -129,11 +178,9 @@ class RecordListAcitivity : AppCompatActivity() {
                     }
                     FileType.FILE -> {
                         if (it == lastPlayPosition) {
-                            audioPlayer?.stop()
+                            exoPlayer?.pause()
                         } else {
-                            lastPlayPosition = it
-                            audioPlayer?.stop()
-                            audioPlayer?.play(list[it].path)
+                            play(it)
                             initRec()
                         }
                     }
@@ -206,6 +253,6 @@ class RecordListAcitivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        audioPlayer?.stop()
+        exoPlayer?.pause()
     }
 }

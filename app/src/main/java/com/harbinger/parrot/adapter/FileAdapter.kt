@@ -57,7 +57,7 @@ class FileAdapter(val context: Context) : RecyclerView.Adapter<RecyclerView.View
             }
             FileType.FOLDER->{
                 holder.sizeTv.text =""
-                holder.iconIv.setImageResource(R.drawable.ic_crab)
+                holder.iconIv.setImageResource(R.drawable.ic_fish)
             }
         }
         if (item.modifiedDate == 0L) {

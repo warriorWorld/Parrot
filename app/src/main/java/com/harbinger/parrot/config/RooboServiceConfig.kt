@@ -35,6 +35,6 @@ object RooboServiceConfig : Serializable {
 
     //vad
     var vadMode = VADMode.VERY_AGGRESSIVE//NORMAL(0),LOW_BITRATE(1),AGGRESSIVE(2),VERY_AGGRESSIVE(3)
-    var silenceDurationMillis = 300
+    var silenceDurationMillis = 600
     var voiceDurationMillis = 300
 }
