@@ -6,6 +6,8 @@ import android.media.AudioRecord;
 import android.os.Environment;
 import android.util.Log;
 
+import com.harbinger.parrot.config.RooboServiceConfig;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -32,7 +34,7 @@ public class FileUtil {
     }
 
     public static String getReservedRecordDirectory() {
-        String pcmDirectoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "Bat" + File.separator;
+        String pcmDirectoryPath = RooboServiceConfig.INSTANCE.getPersistedPcmPath();
         File pcmDirectory = new File(pcmDirectoryPath);
         if (!pcmDirectory.exists()) {
             pcmDirectory.mkdirs();
@@ -41,8 +43,7 @@ public class FileUtil {
     }
 
     public static File getPermanentRecordDirectory() {
-        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator +
-                "Bat" + File.separator + "Permanent" + File.separator;
+        String path =RooboServiceConfig.INSTANCE.getPersistedPcmPath() + "Permanent" + File.separator;
         File directory = new File(path);
         if (!directory.exists()) {
             directory.mkdirs();
@@ -55,50 +56,50 @@ public class FileUtil {
     }
 
     // return size of inFilename
-    public static long savePcmToWav(File pcmFile, File wavFile) {
-        Log.d(TAG, "savePcmToWav start");
-        FileInputStream in = null;
-        FileOutputStream out = null;
-        long totalPcmLen = 0;
-        long totalWavLen;
-        long longSampleRate = SAMPLE_RATE_INHZ;
-        int channels = 1;
-        long byteRate = 16 * SAMPLE_RATE_INHZ * channels / 8;
-        byte[] data = new byte[AudioRecord.getMinBufferSize(SAMPLE_RATE_INHZ, CHANNEL_CONFIG, AUDIO_FORMAT)];
-        try {
-            in = new FileInputStream(pcmFile);
-            totalPcmLen = in.getChannel().size();
-            if (totalPcmLen == 0) {
-                // inFilename is empty
-                return 0;
-            }
-            out = new FileOutputStream(wavFile, true);
-            totalWavLen = totalPcmLen + 36;
-            writeWaveFileHeader(out, totalPcmLen, totalWavLen, longSampleRate, channels, byteRate);
-            while (in.read(data) != -1) {
-                out.write(data);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            Log.d(TAG, "savePcmToWav finish");
-        }
-        return totalPcmLen;
-    }
+//    public static long savePcmToWav(File pcmFile, File wavFile) {
+//        Log.d(TAG, "savePcmToWav start");
+//        FileInputStream in = null;
+//        FileOutputStream out = null;
+//        long totalPcmLen = 0;
+//        long totalWavLen;
+//        long longSampleRate = SAMPLE_RATE_INHZ;
+//        int channels = 1;
+//        long byteRate = 16 * SAMPLE_RATE_INHZ * channels / 8;
+//        byte[] data = new byte[AudioRecord.getMinBufferSize(SAMPLE_RATE_INHZ, CHANNEL_CONFIG, AUDIO_FORMAT)];
+//        try {
+//            in = new FileInputStream(pcmFile);
+//            totalPcmLen = in.getChannel().size();
+//            if (totalPcmLen == 0) {
+//                // inFilename is empty
+//                return 0;
+//            }
+//            out = new FileOutputStream(wavFile, true);
+//            totalWavLen = totalPcmLen + 36;
+//            writeWaveFileHeader(out, totalPcmLen, totalWavLen, longSampleRate, channels, byteRate);
+//            while (in.read(data) != -1) {
+//                out.write(data);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (in != null) {
+//                try {
+//                    in.close();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            if (out != null) {
+//                try {
+//                    out.close();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            Log.d(TAG, "savePcmToWav finish");
+//        }
+//        return totalPcmLen;
+//    }
 
     /**
      * 加入wav文件头

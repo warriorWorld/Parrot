@@ -19,6 +19,7 @@ import com.harbinger.parrot.R;
 import com.harbinger.parrot.config.RooboServiceConfig;
 import com.harbinger.parrot.config.ShareKeys;
 import com.harbinger.parrot.event.BatEvent;
+import com.harbinger.parrot.utils.AudioUtil;
 import com.harbinger.parrot.utils.FileUtil;
 import com.harbinger.parrot.utils.SharedPreferencesUtils;
 import com.harbinger.parrot.vad.IVADRecorder;
@@ -30,6 +31,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
@@ -120,7 +122,17 @@ public class RecordService extends Service {
             @Override
             public Unit invoke(File file) {
                 String wavPath = file.getAbsolutePath().replace(".pcm", ".wav");
-                FileUtil.savePcmToWav(file, new File(wavPath));
+                try {
+                    AudioUtil.PCMToWAV(
+                            file,
+                           new File(wavPath),
+                            1,
+                            RooboServiceConfig.INSTANCE.getAudioSampleRateInHz(),
+                            16
+                    );
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 FileUtil.deleteFile(file);
                 startRecord();
                 return null;

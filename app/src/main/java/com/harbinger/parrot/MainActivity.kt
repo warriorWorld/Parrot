@@ -26,6 +26,7 @@ import com.harbinger.parrot.player.IAudioPlayer
 import com.harbinger.parrot.player.PlayListener
 import com.harbinger.parrot.service.RecordService
 import com.harbinger.parrot.service.SilenceRecordService
+import com.harbinger.parrot.utils.AudioUtil
 import com.harbinger.parrot.utils.FileUtil
 import com.harbinger.parrot.utils.ServiceUtil
 import com.harbinger.parrot.utils.SharedPreferencesUtils
@@ -367,7 +368,13 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
             mH.postDelayed(Runnable {
                 stopRecord()
                 val wavPath = pcm.absolutePath.replace(".pcm", ".wav")
-                FileUtil.savePcmToWav(pcm, File(wavPath))
+                AudioUtil.PCMToWAV(
+                    pcm,
+                    File(wavPath),
+                    1,
+                    RooboServiceConfig.audioSampleRateInHz,
+                    16
+                )
                 audioPlayer?.play(wavPath)
             }, 100)
         })

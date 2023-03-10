@@ -1,5 +1,6 @@
 package com.harbinger.parrot.director
 
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,10 +13,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.PlaybackException
-import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.harbinger.parrot.R
 import com.harbinger.parrot.adapter.FileAdapter
 import com.harbinger.parrot.bean.FileBean
@@ -62,12 +61,17 @@ class RecordListAcitivity : AppCompatActivity() {
 
     private fun initAudioPlayer() {
 //        mAudioPlayer = new AudioPlayer(this);
-        exoPlayer = ExoPlayer.Builder(this).build()
-        exoPlayer!!.playWhenReady = true
-        exoPlayer!!.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-                Log.d(TAG, "<<<<$playbackState>>>>")
+        val renderersFactory = buildRenderersFactory(applicationContext, true)  // 1
+        val trackSelector = DefaultTrackSelector(applicationContext)  // 2
+        exoPlayer = ExoPlayer.Builder(applicationContext, renderersFactory)  // 3
+            .setTrackSelector(trackSelector)
+            .build().apply {
+                trackSelectionParameters =
+                    DefaultTrackSelector.Parameters.Builder(applicationContext).build()  // 4
+                addListener(object : Player.Listener {
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        super.onPlaybackStateChanged(playbackState)
+                        Log.d(TAG, "<<<<$playbackState>>>>")
 //                if (playbackState == Player.STATE_ENDED) {
 //                    notifyMimirAudioCompleted()
 //                } else if (playbackState == Player.STATE_READY && null != currentMimirAudioStateListener) {
@@ -75,19 +79,33 @@ class RecordListAcitivity : AppCompatActivity() {
 //                        mMimirView.toggleState(MimirState.SPEAKING)
 //                    }
 //                }
-            }
+                    }
 
-            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-                super.onPlayWhenReadyChanged(playWhenReady, reason)
-                Log.d(TAG, "<<<<$playWhenReady,$reason>>>>")
-            }
+                    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                        super.onPlayWhenReadyChanged(playWhenReady, reason)
+                        Log.d(TAG, "<<<<$playWhenReady,$reason>>>>")
+                    }
 
-            override fun onPlayerError(error: PlaybackException) {
-                super.onPlayerError(error)
-                Log.d(TAG, "<<<<$error>>>>")
+                    override fun onPlayerError(error: PlaybackException) {
+                        super.onPlayerError(error)
+                        Log.d(TAG, "<<<<$error>>>>")
 //                notifyMimirAudioCompleted()
+                    }
+                })  // 5
+                playWhenReady = false  // 6
             }
-        })
+    }
+
+    private fun buildRenderersFactory(
+        context: Context, preferExtensionRenderer: Boolean
+    ): RenderersFactory {
+        val extensionRendererMode = if (preferExtensionRenderer)
+            DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+        else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+
+        return DefaultRenderersFactory(context.applicationContext)
+            .setExtensionRendererMode(extensionRendererMode)
+            .setEnableDecoderFallback(true)
     }
 
     private fun doGetData() {
@@ -152,7 +170,8 @@ class RecordListAcitivity : AppCompatActivity() {
         if (exoPlayer?.isPlaying == true) {
             exoPlayer?.stop()
         }
-        val path="file:///${list[index].path}"
+//        val path = "file:///${list[index].path}"
+        val path=list[index].path
         Log.d(TAG, "play:$path")
         exoPlayer?.setMediaItem(MediaItem.fromUri(path))
 
