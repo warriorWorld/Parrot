@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.harbinger.parrot"
-        minSdkVersion 23
+        minSdkVersion 26
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -34,7 +34,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.3.2'
     implementation 'androidx.appcompat:appcompat:1.2.0'
@@ -49,4 +48,6 @@ dependencies {
     implementation('com.google.android.exoplayer:exoplayer-core:2.18.1') {
         exclude group: 'androidx.core'
     }
+    implementation "io.reactivex.rxjava3:rxjava:3.0.4"
+    implementation "io.reactivex.rxjava3:rxandroid:3.0.0"
 }

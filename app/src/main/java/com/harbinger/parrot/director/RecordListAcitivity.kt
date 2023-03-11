@@ -1,7 +1,6 @@
 package com.harbinger.parrot.director
 
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
@@ -23,8 +22,13 @@ import com.harbinger.parrot.dialog.*
 import com.harbinger.parrot.listener.OnRecycleItemClickListener
 import com.harbinger.parrot.listener.OnRecycleItemLongClickListener
 import com.harbinger.parrot.utils.FileUtil
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.disposables.Disposable
+import io.reactivex.rxjava3.functions.Function
+import io.reactivex.rxjava3.schedulers.Schedulers
 import java.io.File
-import java.util.*
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by acorn on 2020/11/21.
@@ -45,7 +49,11 @@ class RecordListAcitivity : AppCompatActivity() {
     private lateinit var playBtn: ImageView
     private lateinit var previousBtn: ImageView
     private lateinit var nextBtn: ImageView
+    private lateinit var remainTimeTv: TextView
     private var exoPlayer: ExoPlayer? = null
+    private var audioProgressObserver: Disposable? = null
+    private var currentTotalDurationInSecond = 0
+    private var currentProcess = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,13 +80,15 @@ class RecordListAcitivity : AppCompatActivity() {
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         super.onPlaybackStateChanged(playbackState)
                         Log.d(TAG, "<<<<$playbackState>>>>")
-//                if (playbackState == Player.STATE_ENDED) {
-//                    notifyMimirAudioCompleted()
-//                } else if (playbackState == Player.STATE_READY && null != currentMimirAudioStateListener) {
-//                    if (null != mMimirView) {
-//                        mMimirView.toggleState(MimirState.SPEAKING)
-//                    }
-//                }
+                        if (playbackState == Player.STATE_ENDED) {
+                            playNext()
+                        } else if (playbackState == Player.STATE_READY) {
+                            exoPlayer?.duration?.let {
+                                currentTotalDurationInSecond = (it / 1000f).toInt()
+                                remainTimeTv.text = timeFormat(0, currentTotalDurationInSecond)
+                                progressSb.max = currentTotalDurationInSecond
+                            }
+                        }
                     }
 
                     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -89,11 +99,23 @@ class RecordListAcitivity : AppCompatActivity() {
                     override fun onPlayerError(error: PlaybackException) {
                         super.onPlayerError(error)
                         Log.d(TAG, "<<<<$error>>>>")
-//                notifyMimirAudioCompleted()
+                        playNext()
                     }
                 })  // 5
                 playWhenReady = false  // 6
             }
+    }
+
+    fun timeFormat(seconds: Int, totalSeconds: Int): String? {
+        val left = Math.abs(totalSeconds - seconds)
+        val leftMinutes = (left / 60f).toInt()
+        val leftSeconds = left % 60
+        val sb = StringBuilder()
+        sb.append("-")
+        sb.append(if (leftMinutes >= 10) leftMinutes else "0$leftMinutes")
+        sb.append(":")
+        sb.append(if (leftSeconds >= 10) leftSeconds else "0$leftSeconds")
+        return sb.toString()
     }
 
     private fun buildRenderersFactory(
@@ -135,14 +157,29 @@ class RecordListAcitivity : AppCompatActivity() {
         sizeTv = findViewById(R.id.file_size_tv)
         deleteIv = findViewById(R.id.delete_iv)
         progressSb = findViewById(R.id.progress_sb)
+        progressSb.min = 0
         playBtn = findViewById(R.id.play_btn)
         previousBtn = findViewById(R.id.previous_btn)
         nextBtn = findViewById(R.id.next_btn)
+        remainTimeTv = findViewById(R.id.remain_time_tv)
         fileRcv.layoutManager = LinearLayoutManager(this)
         fileRcv.isFocusableInTouchMode = false
         fileRcv.isFocusable = false
         fileRcv.setHasFixedSize(true)
         fileRcv.adapter = mAdapter
+        playBtn.setOnClickListener {
+            if (exoPlayer?.isPlaying == true) {
+                pause()
+            } else {
+                play()
+            }
+        }
+        nextBtn.setOnClickListener {
+            playNext()
+        }
+        previousBtn.setOnClickListener {
+            playPrevious()
+        }
         deleteIv.setOnClickListener {
             NormalDialogBuilder(this)
                 .setTitle("是否删除全部录音？")
@@ -164,14 +201,55 @@ class RecordListAcitivity : AppCompatActivity() {
                 .show()
         }
     }
+    private fun playPrevious() {
+        lastPlayPosition--
+        if (positionValidCheck()) {
+            play(lastPlayPosition, 0)
+        }
+    }
+    private fun playNext() {
+        lastPlayPosition++
+        if (positionValidCheck()) {
+            play(lastPlayPosition, 0)
+        }
+    }
+
+    private fun positionValidCheck(): Boolean {
+        if (lastPlayPosition < 0) {
+            lastPlayPosition = list.size-1
+        }
+        if (lastPlayPosition > list.size - 1) {
+            lastPlayPosition = 0
+        }
+        Log.d(
+            TAG,
+            "filetype:${list[lastPlayPosition].fileType},path:${list[lastPlayPosition].path}"
+        )
+        if (list[lastPlayPosition].fileType != FileType.FILE ||
+            (!list[lastPlayPosition].path.endsWith(".wav") &&
+                    !list[lastPlayPosition].path.endsWith(".mp3"))
+        ) {
+            Log.d(TAG, "next:$lastPlayPosition")
+            playNext()
+            return false
+        }
+        return true
+    }
+
+    private fun play() {
+        if (positionValidCheck()) {
+            play(lastPlayPosition, currentProcess)
+        }
+    }
 
     private fun play(index: Int, seekTo: Int = 0) {
+        playBtn.setImageResource(R.drawable.ic_pause)
         lastPlayPosition = index
         if (exoPlayer?.isPlaying == true) {
             exoPlayer?.stop()
         }
 //        val path = "file:///${list[index].path}"
-        val path=list[index].path
+        val path = list[index].path
         Log.d(TAG, "play:$path")
         exoPlayer?.setMediaItem(MediaItem.fromUri(path))
 
@@ -180,9 +258,27 @@ class RecordListAcitivity : AppCompatActivity() {
         }
         exoPlayer?.prepare()
         exoPlayer?.play()
-//        if (null != audioStateListener) {
-//            audioStateListener.onGetDuration((exoPlayer!!.duration / 1000f).toInt())
-//        }
+        initRec()
+        audioProgressObserver?.dispose()
+        audioProgressObserver = Observable.interval(200, TimeUnit.MILLISECONDS)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .map {
+                if (null == exoPlayer) {
+                    0
+                } else (exoPlayer!!.currentPosition / 1000f).toInt()
+            }
+            .subscribe {
+                progressSb.progress = it
+                currentProcess=it
+                remainTimeTv.text = timeFormat(it, currentTotalDurationInSecond)
+            }
+    }
+
+    private fun pause() {
+        playBtn.setImageResource(R.drawable.ic_play)
+        exoPlayer?.pause()
+        audioProgressObserver?.dispose()
     }
 
     private fun initRec() {
@@ -200,7 +296,6 @@ class RecordListAcitivity : AppCompatActivity() {
                             exoPlayer?.pause()
                         } else {
                             play(it)
-                            initRec()
                         }
                     }
                 }
