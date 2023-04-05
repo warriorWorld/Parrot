@@ -41,7 +41,7 @@ class RecordListAcitivity : AppCompatActivity() {
     private lateinit var deleteIv: ImageView
     private var mAdapter = FileAdapter(this)
     private val fileModel = FileModel()
-    private var lastPlayPosition = -1
+    private var lastPlayPosition = 0
     private val fileNameOptions = arrayOf("永久保存", "删除")
     private val permanentDirector = FileUtil.getPermanentRecordDirectory()
     private var isInPermanentDirector = false
