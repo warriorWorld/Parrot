@@ -365,8 +365,9 @@ class RecordListAcitivity : AppCompatActivity() {
         listDialog.setOptionsList(fileNameOptions)
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onDestroy() {
+        super.onDestroy()
         exoPlayer?.pause()
+        exoPlayer?.release()
     }
 }
