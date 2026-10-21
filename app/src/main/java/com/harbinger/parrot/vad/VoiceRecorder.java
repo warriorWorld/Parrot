@@ -1,5 +1,6 @@
 package com.harbinger.parrot.vad;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -20,6 +21,7 @@ import vip.inode.demo.webrtc.NoiseSuppressorUtils;
  * Created by George Konovalov on 11/16/2019.
  */
 
+@SuppressLint("MissingPermission")
 public class VoiceRecorder {
     private static final int PCM_CHANNEL = CHANNEL_IN_MONO;
     private static final int PCM_ENCODING_BIT = AudioFormat.ENCODING_PCM_16BIT;

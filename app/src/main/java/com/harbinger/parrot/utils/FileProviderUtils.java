@@ -7,8 +7,6 @@ import android.os.Build;
 
 import androidx.core.content.FileProvider;
 
-import com.harbinger.parrot.BuildConfig;
-
 import java.io.File;
 
 /**
@@ -29,7 +27,7 @@ public class FileProviderUtils {
 
     public static Uri getUriForFile24(Context mContext, File file) {
         Uri fileUri = FileProvider.getUriForFile(mContext,
-                BuildConfig.APPLICATION_ID + ".provider",
+                mContext.getPackageName() + ".provider",
                 file);
         return fileUri;
     }

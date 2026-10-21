@@ -284,6 +284,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                 ServiceType.PARROT -> parrotIv.alpha = 1f
                 ServiceType.BAT -> batIv.alpha = 1f
                 ServiceType.SILENCE -> silenceIv.alpha = 1f
+                ServiceType.NONE -> {}
             }
             when (currentStatus) {
                 UIStatus.IDLE -> {
@@ -303,6 +304,7 @@ class MainActivity : AppCompatActivity(), PermissionCallbacks {
                         ServiceType.PARROT -> {
                             startAnim(false)
                         }
+                        ServiceType.NONE -> {}
                     }
                     //不锁屏
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
